@@ -1,0 +1,63 @@
+// Module:      grow_pool
+// Description: Private setters and getters. Useful for 'friend' structs.
+// Author: Vladimir Dinev
+// vld.dinev@gmail.com
+// 2022-10-18
+
+#define GPOOL_NO_NEXT SIZE_MAX
+
+static inline gpool_id gpool_id_pack(size_t n)
+{
+    gpool_id ret = {n};
+    return ret;
+}
+
+static inline size_t gpool_id_unpack(gpool_id id)
+{
+    return id.id;
+}
+
+// Returns: The 'next' "pointer" for the element specified by 'id', which is
+// another gpool_id.
+gpool_id gpool_get_next(grow_pool_void * pool, gpool_id id);
+
+// Sets the 'next' "pointer" of 'id' to 'next'.
+void gpool_set_next(grow_pool_void * pool, gpool_id id, gpool_id next);
+
+static inline void gpool_set_elem_ctor(grow_pool_void * pool, fvoid x)
+{
+    pool->ctor = x;
+}
+static inline fvoid gpool_get_elem_ctor(grow_pool_void * pool)
+{
+    return pool->ctor;
+}
+
+static inline void gpool_set_elem_ctor_arg(grow_pool_void * pool, void * x)
+{
+    pool->ctor_arg = x;
+}
+static inline void * gpool_get_elem_ctor_arg(grow_pool_void * pool)
+{
+    return pool->ctor_arg;
+}
+
+static inline void gpool_set_elem_dtor(grow_pool_void * pool, fvoid x)
+{
+    pool->dtor = x;
+}
+static inline fvoid gpool_get_elem_dtor(grow_pool_void * pool)
+{
+    return pool->dtor;
+}
+
+static inline vect_void * gpool_get_vect(grow_pool_void * pool)
+{
+    return &pool->vect;
+}
+
+static inline size_t gpool_get_head(grow_pool_void * pool)
+{
+    return vect_void_len(&pool->vect);
+}
+

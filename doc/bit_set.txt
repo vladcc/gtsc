@@ -1,0 +1,92 @@
+// Module:      bit_set
+// Description: A bit set implementation.
+// Author: Vladimir Dinev
+// vld.dinev@gmail.com
+// 2022-10-05
+
+// Do not use directly.
+typedef struct bit_set {
+    uint8_t * bits;
+    size_t num_bits;
+} bit_set;
+
+// Evaluates to the byte number of the bit at 'bit_pos'.
+#define bset_byte_of(bit_pos) ((bit_pos) >> 3)
+
+// Quick modulo of 8. Evaluates to the number of extra bits.
+#define bset_tail_bits(num_bits) ((num_bits) & 7)
+
+// Returns: How many bytes would fit 'num_bits' number of bits.
+static inline size_t bset_bytes(size_t num_bits)
+{
+    return bset_byte_of(num_bits) + (bset_tail_bits(num_bits) > 0);
+}
+
+// Creates a bit set with 'num_bits' number of bits.
+// Returns: 'set' on success, NULL otherwise.
+bit_set * bset_create(bit_set * set, size_t num_bits);
+
+// Releases the resources held by 'set'.
+void bset_destroy(bit_set * set);
+
+// Returns: The number of  bits in 'set'.
+static inline size_t bset_num_bits(const bit_set * set)
+{
+    return set->num_bits;
+}
+
+// Returns: A bit_set structure. If 'is_ok' is true upon return, the returned
+// struct holds a valid copy of 'set'.
+bit_set bset_copy(const bit_set * set, bool * is_ok);
+
+// Returns: True if set 'a' is equal to set 'b', i.e. if they have the same
+// number of bits with the same values. False otherwise.
+bool bset_is_eq(const bit_set * a, const bit_set * b);
+
+// Returns: True if the bit at 'bit_pos' is set to 1, false otherwise.
+static inline bool bset_check(const bit_set * set, size_t bit_pos)
+{
+    return ((set->bits[bset_byte_of(bit_pos)] >> bset_tail_bits(bit_pos)) & 1);
+}
+
+// Sets the bit at 'bit_pos' to 1.
+static inline void bset_set(bit_set * set, size_t bit_pos)
+{
+    set->bits[bset_byte_of(bit_pos)] |= (1 << bset_tail_bits(bit_pos));
+}
+
+// Sets the bit at 'bit_pos' to 0.
+static inline void bset_clear(bit_set * set, size_t bit_pos)
+{
+    set->bits[bset_byte_of(bit_pos)] &= ~(1 << bset_tail_bits(bit_pos));
+}
+
+// Sets the bit at 'bit_pos' to the opposite value of itself.
+static inline void bset_toggle(bit_set * set, size_t bit_pos)
+{
+    set->bits[bset_byte_of(bit_pos)] ^= (1 << bset_tail_bits(bit_pos));
+}
+
+// Sets all bytes in 'set' to 'pat'.
+void bset_set_to_pattern(bit_set * set, uint8_t pat);
+
+// Sets all bits in 'set' to 1.
+static inline void bset_all_set(bit_set * set)
+{
+    bset_set_to_pattern(set, 0xFF);
+}
+
+// Sets all bits in 'set' to 0.
+static inline void bset_all_clear(bit_set * set)
+{
+    bset_set_to_pattern(set, 0x00);
+}
+
+// Returns: The number of 0 bits in 'set'.
+size_t bset_num_zeroes(const bit_set * set);
+
+// Returns: The number of 1 bits in 'set'.
+static inline size_t bset_num_ones(const bit_set * set)
+{
+    return set->num_bits - bset_num_zeroes(set);
+}

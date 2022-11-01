@@ -1,0 +1,41 @@
+#ifndef MISC_H
+#define MISC_H
+
+#include <stddef.h>
+
+// Module:      misc
+// Description: Miscellaneous functions.
+// Author: Vladimir Dinev
+// vld.dinev@gmail.com
+// 2022-10-05
+
+// Returns: The next power of 2 greater or equal to n.
+static inline size_t misc_geq_p2(size_t n)
+{
+    if (!(~n))
+        return 0;
+
+    if (n && !(n & (n-1)))
+        return n;
+
+    size_t p2 = 1;
+
+    while (p2 < n)
+        p2 <<= 1;
+
+    return p2;
+}
+
+// Returns: The padding needed to align something of size 'n' to an 'align'
+// boundary.
+static inline size_t misc_align_to(size_t n, size_t align)
+{
+    return (align) ? n + ((align - (n % align)) % align) : n;
+}
+
+// Returns: The calculated offset starting from 'where'.
+static inline void ** misc_offset_in(void * where, size_t offs)
+{
+    return (void **)((unsigned char *)where + offs);
+}
+#endif

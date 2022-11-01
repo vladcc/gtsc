@@ -1,0 +1,1 @@
+g++ -I../../src ../../src/vect/vect.c ../../src/arr_algo/arr_algo.c ../../src/oa_set/oa_set.c ../../src/bit_set/bit_set.c ../../src/ch_set/ch_set.c ../../src/ch_set/ch_set_priv.c ../../src/ch_hash/ch_hash_priv.c ../../src/ptr_set/ptr_set.c ../../src/ptr_set/ptr_set_priv.c sets.cpp -o sets.debug.bin -Wall -Wfatal-errors -g -fsanitize=address

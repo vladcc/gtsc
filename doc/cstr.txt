@@ -1,0 +1,127 @@
+// Module:      cstr
+// Description: A dynamic string implementation.
+// Author: Vladimir Dinev
+// vld.dinev@gmail.com
+// 2022-10-03
+
+// Do not use directly.
+typedef struct cstr {
+    char * data;
+    size_t len;
+    size_t cap;
+} cstr;
+
+// Creates a string with 'cap' capacity.
+// Returns: 'str' on success, NULL otherwise.
+cstr * cstr_create_cap(cstr * str, size_t cap);
+
+// Like cstr_create_cap() but provides a default capacity.
+static inline cstr * cstr_create(cstr * str)
+{
+    return cstr_create_cap(str, 31);
+}
+
+// Creates 'str' from an existing character array pointed to by 'src'.
+// Returns: 'str' on success, NULL otherwise.
+cstr * cstr_create_str(cstr * str, const char * src, size_t src_len);
+
+// Releases the resources held by 'str'.
+void cstr_destroy(cstr * str);
+
+// Resizes 'str' to 'cap' capacity.
+// Returns: 'str' on success, NULL otherwise.
+cstr * cstr_resize(cstr * str, size_t cap);
+
+// Appends 'ch' to the end of 'str'.
+// Returns: 'str' on success, NULL otherwise.
+cstr * cstr_push(cstr * str, char ch);
+
+// Inserts the array of characters pointed to by 'src' at 'index' in 'dest'.
+// Returns: 'dest' on success, NULL otherwise.
+cstr * cstr_insert(cstr * dest, size_t index, const char * src, size_t len);
+
+// Appends the character array pointed to by 'src' to 'dest'.
+// Returns: 'dest' on success, NULL otherwise.
+static inline cstr * cstr_append(cstr * dest, const char * src, size_t len)
+{
+    return cstr_insert(dest, dest->len, src, len);
+}
+
+// Erases 'len' number of elements from 'str' starting at 'index'.
+// Returns: 'str'.
+cstr * cstr_erase(cstr * str, size_t index, size_t len);
+
+// Copies the character array at 'src' over the string in 'dest'.
+// Returns: 'dest' on success, NULL otherwise.
+cstr * cstr_copy_over(cstr * dest, const char * src, size_t len);
+
+// Replaces 'dest' with the substring of length 'len' starting at 'index' in the
+// character array at 'src'.
+// Returns: 'dest' on success, NULL otherwise.
+static inline cstr * cstr_substr(
+    cstr * dest,
+    const char * src,
+    size_t index,
+    size_t len
+)
+{
+    return cstr_copy_over(dest, src+index, len);
+}
+
+// Truncates the capacity of 'str' to its length.
+// Returns: 'str' on success, NULL otherwise.
+static inline cstr * cstr_shrink_to_fit(cstr * str)
+{
+    return cstr_resize(str, str->len);
+}
+
+// Returns: The distance in array units between 'res' and the first character
+// in 'str'. 'res' is assumed to point somewhere in 'str'.
+static inline size_t cstr_distance(const cstr * str, const char * res)
+{
+    return res - str->data;
+}
+
+// Returns: The character in 'str' at index 'n'.
+static inline char cstr_get(const cstr * str, size_t n)
+{
+    return str->data[n];
+}
+
+// Returns: True if 'stra' is equal to 'strb', false otherwise.
+static inline bool cstr_is_eq(const cstr * stra, const cstr * strb)
+{
+    return ((stra->len == strb->len) &&
+        (*stra->data == *strb->data) &&
+        (strcmp(stra->data, strb->data) == 0));
+}
+
+// Turns 'str' into the empty string.
+static inline void cstr_reset(cstr * str)
+{
+    str->data[(str->len = 0)] = '\0';
+}
+
+// Returns: The address of the first character in 'str'.
+static inline char * cstr_data(const cstr * str)
+{
+    return str->data;
+}
+
+// Returns: True of 'str' is empty, false otherwise.
+static inline bool cstr_is_empty(const cstr * str)
+{
+    return (0 == str->len);
+}
+
+// Returns: The length of 'str'.
+static inline size_t cstr_len(const cstr * str)
+{
+    return str->len;
+}
+
+// Returns: The capacity of 'str'.
+static inline size_t cstr_cap(const cstr * str)
+{
+    return str->cap;
+}

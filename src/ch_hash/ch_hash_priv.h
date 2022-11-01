@@ -1,0 +1,57 @@
+#ifndef CH_HASH_PRIV_H
+#define CH_HASH_PRIV_H
+
+#include "nslist/nslist.h"
+#include <stddef.h>
+
+// Module:      ch_hash
+// Description: The private pool for ch_hash used to avoid malloc() and free().
+// when chaining.
+// Author: Vladimir Dinev
+// vld.dinev@gmail.com
+// 2022-10-18
+
+typedef struct chh_priv_pool {
+    nslist_void free_list;
+    size_t elem_size;
+    size_t elem_num;
+    nslist_void pool_list;
+} chh_priv_pool;
+
+chh_priv_pool * chh_priv_pool_create(
+    chh_priv_pool * pool,
+    size_t elem_size,
+    size_t elem_num
+);
+void chh_priv_pool_destroy(chh_priv_pool * pool);
+void * chh_priv_pool_get(chh_priv_pool * pool);
+void chh_priv_pool_put_back(chh_priv_pool * pool, void * elem);
+const void * chh_priv_not_init_val(void);
+void * chh_priv_get_elem_addr(chh_priv_pool * pool, size_t elem);
+
+static inline size_t chh_priv_pool_elem_size(chh_priv_pool * pool)
+{
+    return pool->elem_size;
+}
+static inline void * chh_priv_pool_get_head(chh_priv_pool * pool)
+{
+    return nslist_void_head(&pool->free_list);
+}
+
+static inline void * chh_priv_pool_next_get(chh_priv_pool * pool, void * elem)
+{
+    return nslist_void_next(&pool->free_list, elem);
+}
+static inline void chh_priv_pool_next_set(
+    chh_priv_pool * pool,
+    void * elem,
+    void * next
+)
+{
+    *nslist_void_pnext(&pool->free_list, elem) = next;
+}
+static inline size_t chh_priv_pool_curr_cap(chh_priv_pool * pool)
+{
+    return pool->elem_num;
+}
+#endif

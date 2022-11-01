@@ -1,0 +1,233 @@
+#include "ptr_set_node.h"
+#include "ptr_set_priv.h"
+
+// Module:      ptr_set
+// Description: Chained set hash table implementation. Copies and returns only
+// the pointers passed to it. That is, the data is expected to be allocated
+// elsewhere. Uses chaining to resolve collisions. The load factor is always
+// one. When it's reached, rehashing is initiated.
+// Author: Vladimir Dinev
+// vld.dinev@gmail.com
+// 2022-10-29
+
+// Three way comparison type.
+typedef int (*ptrs_compar)(const void * tbl_elem, const void * key);
+
+// Hash function type.
+typedef size_t (*ptrs_get_hash)(const void * elem);
+
+// Do not use directly.
+typedef struct ptrs_void {
+    ptrs_node * data;
+    size_t elems;
+    size_t tbl_size;
+    ptrs_compar cmp;
+    ptrs_get_hash hash;
+    ptrs_priv_pool chain_pool;
+} ptrs_void;
+
+#define PTR_SET_DEFAULT_POOL 16
+#define PTR_SET_DEFAULT_SIZE 32
+
+// Creates a table large enough for 'elem_num' of elements.
+// Returns: 'tbl' on success, NULL otherwise.
+ptrs_void * ptrs_void_create_sz_pl(
+    ptrs_void * tbl,
+    ptrs_get_hash hash,
+    ptrs_compar cmp,
+    size_t elem_num,
+    size_t pool_sz
+);
+
+// Like ptrs_void_create_sz_pl() but with default pool size.
+static inline ptrs_void * ptrs_void_create_sz(
+    ptrs_void * tbl,
+    ptrs_get_hash hash,
+    ptrs_compar cmp,
+    size_t elem_num
+)
+{
+    return ptrs_void_create_sz_pl(tbl, hash, cmp, elem_num,
+        PTR_SET_DEFAULT_POOL);
+}
+
+// Like ptrs_void_create_sz() but provides a default size.
+static inline ptrs_void * ptrs_void_create(
+    ptrs_void * tbl,
+    ptrs_get_hash hash,
+    ptrs_compar cmp
+)
+{
+    return ptrs_void_create_sz(tbl, hash, cmp, PTR_SET_DEFAULT_SIZE);
+}
+
+// Releases the resources held by 'tbl'.
+void ptrs_void_destroy(ptrs_void * tbl);
+
+// Inserts 'key' in 'tbl'. If 'key' is already in 'tbl', nothing happens.
+// Returns: 'tbl' on success, NULL otherwise.
+ptrs_void * ptrs_void_insert(
+    ptrs_void * tbl,
+    const void * key
+);
+
+// Returns: A pointer to 'key', NULL if 'key' is not in 'tbl'.
+void * ptrs_void_lookup(ptrs_void * tbl, const void * key);
+
+// Removes 'key' from 'tbl'.
+// Returns: 'tbl'.
+ptrs_void * ptrs_void_remove(ptrs_void * tbl, const void * key);
+
+// Empties 'tbl'.
+// Returns: 'tbl'.
+ptrs_void * ptrs_void_clear(ptrs_void * tbl);
+
+// Returns: A ptrs_void struct. If 'is_ok' is true upon return, the returned
+// struct holds a valid copy of 'tbl'.
+ptrs_void ptrs_void_copy(ptrs_void * tbl, bool * is_ok);
+
+// Returns: The number of elements in 'tbl'.
+static inline size_t ptrs_void_elems(ptrs_void * tbl)
+{
+    return tbl->elems;
+}
+
+// Returns: True if 'tbl' is empty, false otherwise.
+static inline bool ptrs_void_is_empty(ptrs_void * tbl)
+{
+    return (ptrs_void_elems(tbl) == 0);
+}
+
+// Returns: The max number of elements 'tbl' can hold before it has to grow.
+static inline size_t ptrs_void_cap(ptrs_void * tbl)
+{
+    return tbl->tbl_size;
+}
+
+// Keeps state during iteration.
+typedef struct ptrs_iterator {
+    size_t bucket;
+    ptrs_node * node;
+} ptrs_iterator;
+
+// Initializes 'iter'.
+static inline void ptrs_iterator_init(ptrs_iterator * iter)
+{
+    iter->bucket = 0;
+    iter->node = NULL;
+}
+
+// Iterates over 'tbl'. 'it' is assumed to have been initialized by
+// ptrs_iterator_init().
+// Returns: A pointer to the next key in 'tbl', NULL if there is no next key.
+const void * ptrs_void_iterate(
+    ptrs_void * tbl,
+    ptrs_iterator * it
+);
+
+// Generates type safe wrappers.
+#define PTR_SET_DEFINE(NAME, BASE_KEY_TYPE)                                    \
+                                                                               \
+typedef struct ptrs_##NAME {                                                   \
+    ptrs_void tbl;                                                             \
+} ptrs_##NAME;                                                                 \
+                                                                               \
+static inline ptrs_##NAME * ptrs_##NAME##_create_sz_pl(                        \
+    ptrs_##NAME * tbl,                                                         \
+    ptrs_get_hash hash,                                                        \
+    ptrs_compar cmp,                                                           \
+    size_t elem_num,                                                           \
+    size_t pool_sz                                                             \
+)                                                                              \
+{                                                                              \
+    return (ptrs_##NAME *)ptrs_void_create_sz_pl((ptrs_void *)tbl, hash, cmp,  \
+        elem_num, pool_sz);                                                    \
+}                                                                              \
+                                                                               \
+static inline ptrs_##NAME * ptrs_##NAME##_create_sz(                           \
+    ptrs_##NAME * tbl,                                                         \
+    ptrs_get_hash hash,                                                        \
+    ptrs_compar cmp,                                                           \
+    size_t elem_num                                                            \
+)                                                                              \
+{                                                                              \
+    return (ptrs_##NAME *)ptrs_void_create_sz((ptrs_void *)tbl, hash, cmp,     \
+        elem_num);                                                             \
+}                                                                              \
+                                                                               \
+static inline ptrs_##NAME * ptrs_##NAME##_create(                              \
+    ptrs_##NAME * tbl,                                                         \
+    ptrs_get_hash hash,                                                        \
+    ptrs_compar cmp                                                            \
+)                                                                              \
+{                                                                              \
+    return (ptrs_##NAME *)ptrs_void_create((ptrs_void *)tbl, hash, cmp);       \
+}                                                                              \
+                                                                               \
+static inline void ptrs_##NAME##_destroy(ptrs_##NAME * tbl)                    \
+{                                                                              \
+    ptrs_void_destroy((ptrs_void *)tbl);                                       \
+}                                                                              \
+                                                                               \
+static inline ptrs_##NAME * ptrs_##NAME##_insert(                              \
+    ptrs_##NAME * tbl,                                                         \
+    const BASE_KEY_TYPE * key                                                  \
+)                                                                              \
+{                                                                              \
+    return (ptrs_##NAME *)ptrs_void_insert((ptrs_void *)tbl,                   \
+        (const void *)key);                                                    \
+}                                                                              \
+                                                                               \
+static inline const BASE_KEY_TYPE * ptrs_##NAME##_lookup(                      \
+    ptrs_##NAME * tbl,                                                         \
+    const BASE_KEY_TYPE * key                                                  \
+)                                                                              \
+{                                                                              \
+    return (const BASE_KEY_TYPE *)ptrs_void_lookup((ptrs_void *)tbl,           \
+        (const void *)key);                                                    \
+}                                                                              \
+                                                                               \
+static inline ptrs_##NAME * ptrs_##NAME##_remove(                              \
+    ptrs_##NAME * tbl,                                                         \
+    const BASE_KEY_TYPE * key                                                  \
+)                                                                              \
+{                                                                              \
+    return (ptrs_##NAME *)ptrs_void_remove((ptrs_void *)tbl,                   \
+        (const void *)key);                                                    \
+}                                                                              \
+                                                                               \
+static inline ptrs_##NAME * ptrs_##NAME##_clear(ptrs_##NAME * tbl)             \
+{                                                                              \
+    return (ptrs_##NAME *)ptrs_void_clear((ptrs_void *)tbl);                   \
+}                                                                              \
+                                                                               \
+static inline ptrs_##NAME ptrs_##NAME##_copy(ptrs_##NAME * tbl, bool * is_ok)  \
+{                                                                              \
+    ptrs_##NAME ret;                                                           \
+    ret.tbl = ptrs_void_copy((ptrs_void *)tbl, is_ok);                         \
+    return ret;                                                                \
+}                                                                              \
+                                                                               \
+static inline size_t ptrs_##NAME##_elems(ptrs_##NAME * tbl)                    \
+{                                                                              \
+    return ptrs_void_elems((ptrs_void *)tbl);                                  \
+}                                                                              \
+                                                                               \
+static inline bool ptrs_##NAME##_is_empty(ptrs_##NAME * tbl)                   \
+{                                                                              \
+    return ptrs_void_is_empty((ptrs_void *)tbl);                               \
+}                                                                              \
+                                                                               \
+static inline const BASE_KEY_TYPE * ptrs_##NAME##_iterate(                     \
+    ptrs_##NAME * tbl,                                                         \
+    ptrs_iterator * it                                                         \
+)                                                                              \
+{                                                                              \
+    return (const BASE_KEY_TYPE *)ptrs_void_iterate((ptrs_void *)tbl, it);     \
+}                                                                              \
+                                                                               \
+static inline size_t ptrs_##NAME##_cap(ptrs_##NAME * tbl)                      \
+{                                                                              \
+    return ptrs_void_cap((ptrs_void *)tbl);                                    \
+} typedef BASE_KEY_TYPE ptrs_hash_##NAME##_dont_forget_the_semi
+

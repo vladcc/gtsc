@@ -1,0 +1,201 @@
+#ifndef OA_SET_TBL_H
+#define OA_SET_TBL_H
+
+#include "bit_set/bit_set.h"
+#include <stddef.h>
+#include <stdbool.h>
+
+// Module:      oa_set
+// Description: Open address set hash table implementation. Contains bit-wise
+// copies of the inserted elements.
+// Author: Vladimir Dinev
+// vld.dinev@gmail.com
+// 2022-10-30
+
+// Load factor is expressed as a percent of the total table size. Once it's
+// reached rehashing is initiated.
+#define OAS_LOAD_FACT 70
+
+// Three way comparison type.
+typedef int (*oas_compar)(const void * tbl_key, const void * key);
+
+// Hash function type.
+typedef size_t (*oas_get_hash)(const void * key);
+
+// Do not use directly.
+typedef struct oas_void {
+    void * data;
+    bit_set is_taken;
+    size_t key_size;
+    size_t elem_left;
+    size_t tbl_size;
+    oas_get_hash hash;
+    oas_compar cmp;
+} oas_void;
+
+// Creates a table which can hold 'elem_num' elements before it needs to grow.
+// Returns: 'tbl' on success, NULL otherwise.
+oas_void * oas_void_create_sz(
+    oas_void * tbl,
+    size_t key_size,
+    oas_get_hash hash,
+    oas_compar cmp,
+    size_t elem_num
+);
+
+// Like oas_void_create_sz(), but sets a default size.
+static inline oas_void * oas_void_create(
+    oas_void * tbl,
+    size_t key_size,
+    oas_get_hash hash,
+    oas_compar cmp
+)
+{
+    return oas_void_create_sz(tbl, key_size, hash, cmp, 32);
+}
+
+// Releases the resources held by 'tbl'.
+void oas_void_destroy(oas_void * tbl);
+
+// Inserts 'key' in 'tbl'. If 'key' is not in 'tbl', nothing happens.
+// Returns: 'tbl' on success, NULL otherwise.
+oas_void * oas_void_insert(oas_void * tbl, const void * key);
+
+// Returns: A pointer to 'key' if 'key' is in 'tbl', NULL otherwise.
+void * oas_void_lookup(oas_void * tbl, const void * key);
+
+// Returns: True if 'key' is in 'tbl', false otherwise.
+static inline bool oas_void_has(oas_void * tbl, const void * key)
+{
+    return (oas_void_lookup(tbl, key) != NULL);
+}
+
+// Returns: the number of entries in 'tbl'.
+size_t oas_void_entries(oas_void * tbl);
+
+// Returns: True if 'tbl' is empty, false otherwise.
+static inline bool oas_void_is_empty(oas_void * tbl)
+{
+    return (oas_void_entries(tbl) == 0);
+}
+
+// Removes 'key' from 'tbl'.
+// Returns: 'tbl'.
+oas_void * oas_void_remove(oas_void * tbl, const void * key);
+
+// Empties 'tbl' by setting its number of elements to 0.
+// Returns: 'tbl'.
+oas_void * oas_void_clear(oas_void * tbl);
+
+// Returns: A oas_void struct. If 'is_ok' is true upon return, the returned
+// struct holds a valid copy of 'tbl'.
+oas_void oas_void_copy(oas_void * tbl, bool * is_ok);
+
+// Keeps state during iteration,
+typedef struct oas_iterator {
+    size_t it;
+} oas_iterator;
+#define OAS_ITER_INIT {0}
+
+// Iterates over 'tbl'. Each successive call moves to the next element. 'it' is
+// assumed to have been initialized with OAS_ITER_INIT.
+// Returns: A pointer to the next key in 'tbl', or NULL if there is no next key.
+const void * oas_void_iterate(
+    oas_void * tbl,
+    oas_iterator * it
+);
+
+// Generates type safe wrappers.
+#define OA_SET_DEFINE(NAME, KEY_TYPE)                                          \
+                                                                               \
+typedef struct oas_##NAME {                                                    \
+    oas_void tbl;                                                              \
+} oas_##NAME;                                                                  \
+                                                                               \
+static inline oas_##NAME * oas_##NAME##_create_sz(                             \
+    oas_##NAME * tbl,                                                          \
+    oas_get_hash hash,                                                         \
+    oas_compar cmp,                                                            \
+    size_t elem_num                                                            \
+)                                                                              \
+{                                                                              \
+    return (oas_##NAME *)oas_void_create_sz((oas_void *)tbl,                   \
+        sizeof(KEY_TYPE), hash, cmp, elem_num);                                \
+}                                                                              \
+                                                                               \
+static inline oas_##NAME * oas_##NAME##_create(                                \
+    oas_##NAME * tbl,                                                          \
+    oas_get_hash hash,                                                         \
+    oas_compar cmp                                                             \
+)                                                                              \
+{                                                                              \
+    return (oas_##NAME *)oas_void_create((oas_void *)tbl,                      \
+        sizeof(KEY_TYPE), hash, cmp);                                          \
+}                                                                              \
+                                                                               \
+static inline void oas_##NAME##_destroy(oas_##NAME * tbl)                      \
+{                                                                              \
+    oas_void_destroy((oas_void *)tbl);                                         \
+}                                                                              \
+                                                                               \
+static inline const oas_##NAME * oas_##NAME##_insert(                          \
+    oas_##NAME * tbl,                                                          \
+    const KEY_TYPE * key                                                       \
+)                                                                              \
+{                                                                              \
+    return (oas_##NAME *)oas_void_insert((oas_void *)tbl, (const void *)key);  \
+}                                                                              \
+                                                                               \
+static inline const KEY_TYPE * oas_##NAME##_lookup(                            \
+    oas_##NAME * tbl,                                                          \
+    const KEY_TYPE * key                                                       \
+)                                                                              \
+{                                                                              \
+    return (const KEY_TYPE *)oas_void_lookup((oas_void *)tbl,                  \
+        (const void *)key);                                                    \
+}                                                                              \
+                                                                               \
+static inline bool oas_##NAME##_has(oas_##NAME * tbl, const KEY_TYPE * key)    \
+{                                                                              \
+    return oas_void_has((oas_void *)tbl, (const void *)key);                   \
+}                                                                              \
+                                                                               \
+static inline oas_##NAME * oas_##NAME##_remove(                                \
+    oas_##NAME * tbl,                                                          \
+    const KEY_TYPE * key                                                       \
+)                                                                              \
+{                                                                              \
+    return (oas_##NAME *)oas_void_remove((oas_void *)tbl, (const void *)key);  \
+}                                                                              \
+                                                                               \
+static inline oas_##NAME * oas_##NAME##_clear(oas_##NAME * tbl)                \
+{                                                                              \
+    return (oas_##NAME *)oas_void_clear((oas_void *)tbl);                      \
+}                                                                              \
+                                                                               \
+static inline oas_##NAME oas_##NAME##_copy(oas_##NAME * tbl, bool * is_ok)     \
+{                                                                              \
+    oas_##NAME ret;                                                            \
+    ret.tbl = oas_void_copy((oas_void *)tbl, is_ok);                           \
+    return ret;                                                                \
+}                                                                              \
+                                                                               \
+static inline const KEY_TYPE * oas_##NAME##_iterate(                           \
+    oas_##NAME * tbl,                                                          \
+    oas_iterator * it                                                          \
+)                                                                              \
+{                                                                              \
+    return (const KEY_TYPE *)oas_void_iterate((oas_void *)tbl, it);            \
+}                                                                              \
+                                                                               \
+static inline size_t oas_##NAME##_entries(oas_##NAME * tbl)                    \
+{                                                                              \
+     return oas_void_entries((oas_void *)tbl);                                 \
+}                                                                              \
+                                                                               \
+static inline bool oas_##NAME##_is_empty(oas_##NAME * tbl)                     \
+{                                                                              \
+    return oas_void_is_empty((oas_void *)tbl);                                 \
+} typedef KEY_TYPE oa_hash_##NAME##_dont_forget_the_semi
+
+#endif

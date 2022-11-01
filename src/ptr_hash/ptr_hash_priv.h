@@ -1,0 +1,60 @@
+#ifndef PTR_HASH_PRIV_H
+#define PTR_HASH_PRIV_H
+
+#include "ptr_hash_node.h"
+#include <stddef.h>
+
+// Module:      ptr_hash
+// Description: The private pool for ptr_hash used to avoid malloc() and free().
+// when chaining.
+// Author: Vladimir Dinev
+// vld.dinev@gmail.com
+// 2022-10-21
+
+typedef struct ptrh_priv_node_pool_node {
+    ptrh_node * nodes;
+    struct ptrh_priv_node_pool_node * next;
+} ptrh_priv_node_pool_node;
+
+typedef struct ptrh_priv_node_pool_list {
+    ptrh_priv_node_pool_node * head;
+} ptrh_priv_node_pool_list;
+
+typedef struct ptrh_priv_node_list {
+    ptrh_node * head;
+} ptrh_priv_node_list;
+
+typedef struct ptrh_priv_pool {
+    ptrh_priv_node_list free_list;
+    ptrh_priv_node_pool_list pool_list;
+    size_t elem_num;
+} ptrh_priv_pool;
+
+ptrh_priv_pool * ptrh_priv_pool_create(ptrh_priv_pool * pool, size_t elem_num);
+void ptrh_priv_pool_destroy(ptrh_priv_pool * pool);
+ptrh_node * ptrh_priv_pool_get(ptrh_priv_pool * pool);
+void ptrh_priv_pool_put_back(ptrh_priv_pool * pool, ptrh_node * elem);
+const void * ptrh_priv_not_init_val(void);
+ptrh_node * ptrh_priv_get_elem_addr(ptrh_priv_pool * pool, size_t elem);
+
+static inline void * ptrh_priv_pool_get_head(ptrh_priv_pool * pool)
+{
+    return pool->free_list.head;
+}
+
+#define PTR_HASH_PRIV_UNUSED(x) (void)(x)
+static inline void * ptrh_priv_pool_next_get(
+    ptrh_priv_pool * pool,
+    const void * elem
+)
+{
+    PTR_HASH_PRIV_UNUSED(pool);
+    return ((ptrh_node *)elem)->next;
+}
+#undef PTR_HASH_PRIV_UNUSED
+
+static inline size_t ptrh_priv_pool_curr_cap(ptrh_priv_pool * pool)
+{
+    return pool->elem_num;
+}
+#endif

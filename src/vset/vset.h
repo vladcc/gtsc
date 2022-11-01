@@ -1,0 +1,340 @@
+#ifndef VSET_H
+#define VSET_H
+
+#include "vect/vect.h"
+
+// Module:      vset
+// Description: A set implemented over an ordered vector. Quick for small
+// numbers of things.
+// Author: Vladimir Dinev
+// vld.dinev@gmail.com
+// 2022-10-03
+
+// Do not use directly.
+typedef struct vset_void {
+    vect_void vect;
+    arr_fcomp compar;
+} vset_void;
+
+
+// Creates a set with 'elem_size' element size and 'cap' capacity.
+// Returns: 'set' on success, NULL otherwise.
+vset_void * vset_void_create_cap(
+    vset_void * set,
+    size_t elem_size,
+    arr_fcomp compar,
+    size_t cap
+);
+
+// Like vset_void_create_cap() but provides a default capacity.
+static inline vset_void * vset_void_create(
+    vset_void * set,
+    size_t elem_size,
+    arr_fcomp compar
+)
+{
+    return vset_void_create_cap(set, elem_size, compar, 32);
+}
+
+// Places the data at 'elem' in 'set'.
+void vset_void_insert(vset_void * set, const void * elem);
+
+// Like vset_void_insert() but inserts an array of 'len' number of elements.
+// Returns: 'set'.
+vset_void * vset_void_insert_arr(
+    vset_void * set,
+    const void * arr,
+    size_t len
+);
+
+// Creates 'set' from 'arr'.
+// Returns: 'set' on success, NULL otherwise.
+static inline vset_void * vset_void_create_arr(
+    vset_void * set,
+    size_t elem_size,
+    arr_fcomp compar,
+    const void * arr,
+    size_t len
+)
+{
+    return vset_void_create(set, elem_size, compar) ?
+        vset_void_insert_arr(set, arr, len) : NULL;
+}
+
+// Releases the resources held by 'set'.
+void vset_void_destroy(vset_void * set);
+
+// Truncates the capacity of 'set' to its length.
+static inline void vset_void_shrink_to_fit(vset_void * set)
+{
+    vect_void_shrink_to_fit(&set->vect);
+}
+
+// Returns: True if 'set' is empty, false otherwise.
+static inline bool vset_void_is_empty(const vset_void * set)
+{
+    return vect_void_is_empty(&set->vect);
+}
+
+// Returns: The length/size of 'set'.
+static inline size_t vset_void_size(const vset_void * set)
+{
+    return vect_void_len(&set->vect);
+}
+
+// Returns: The capacity of 'set'.
+static inline size_t vset_void_cap(const vset_void * set)
+{
+    return vect_void_cap(&set->vect);
+}
+
+// Returns: The address of the three way comparison function of 'set'.
+static inline arr_fcomp vset_void_compar(const vset_void * set)
+{
+    return set->compar;
+}
+
+// Returns: The address of the first data member of 'set'.
+static inline const void * vset_void_data(const vset_void * set)
+{
+    return vect_void_data(&set->vect);
+}
+
+// Returns: The address of the underlying vector of 'set'.
+static inline const vect_void * vset_void_vect(const vset_void * set)
+{
+    return &set->vect;
+}
+
+// Empties 'set'.
+static inline void vset_void_reset(vset_void * set)
+{
+    vect_void_reset(&set->vect);
+}
+
+// Creates a copy of 'src'.
+// Returns: A vset structure. 'is_ok' is true if the operation succeeded, false
+// otherwise.
+vset_void vset_void_copy(const vset_void * src, bool * is_ok);
+
+// Removes the value pointed to by 'val' from 'set'.
+void vset_void_erase(vset_void * set, const void * val);
+
+// Returns: True if set 'a' is equal to set 'b'.
+static inline bool vset_void_is_eq(const vset_void * a, const vset_void * b)
+{
+    return vect_void_is_eq(&a->vect, &b->vect, a->compar);
+}
+
+// Indicates if 'set' has a member with the same value as pointed to by 'elem'.
+// Returns: The address of the element in 'set' if it exists, NULL otherwise.
+static inline const void * vset_void_has(
+    const vset_void * set,
+    const void * elem
+)
+{
+    return vect_void_bsearch(&set->vect, elem, set->compar);
+}
+
+// Returns: The address of the element at 'index' in 'set'.
+static inline const void * vset_void_get(const vset_void * set, size_t index)
+{
+    return vect_void_get(&set->vect, index);
+}
+
+// Resets 'diff' and sets it to the difference of 'set_a' and 'set_b'.
+// Returns: 'diff'.
+vset_void * vset_void_diff(
+    vset_void * diff,
+    const vset_void * set_a,
+    const vset_void * set_b
+);
+
+// Resets 'un' and sets it to the union of 'set_a' and 'set_b'.
+// Returns: 'un'.
+vset_void * vset_void_union(
+    vset_void * un,
+    const vset_void * set_a,
+    const vset_void * set_b
+);
+
+// Resets 'isc' and sets it to the intersection of 'set_a' and 'set_b'.
+// Returns: 'isc'.
+vset_void * vset_void_intersect(
+    vset_void * isc,
+    const vset_void * set_a,
+    const vset_void * set_b
+);
+
+// Generates type safe wrappers.
+#define VSET_DEFINE(NAME, TYPE)                                                \
+                                                                               \
+typedef struct vset_##NAME {                                                   \
+    vset_void set;                                                             \
+} vset_##NAME;                                                                 \
+                                                                               \
+static inline vset_void * vset_##NAME##_get_base(vset_##NAME * set)            \
+{                                                                              \
+    return (vset_void *)set;                                                   \
+}                                                                              \
+                                                                               \
+static inline vset_##NAME * vset_##NAME##_create_cap(                          \
+    vset_##NAME * set,                                                         \
+    arr_fcomp compar,                                                          \
+    size_t cap                                                                 \
+)                                                                              \
+{                                                                              \
+    return (vset_##NAME *)vset_void_create_cap((vset_void *)set, sizeof(TYPE), \
+        compar, cap);                                                          \
+}                                                                              \
+                                                                               \
+static inline vset_##NAME * vset_##NAME##_create(                              \
+    vset_##NAME * set,                                                         \
+    arr_fcomp compar                                                           \
+)                                                                              \
+{                                                                              \
+    return (vset_##NAME *)vset_void_create((vset_void *)set, sizeof(TYPE),     \
+     compar);                                                                  \
+}                                                                              \
+                                                                               \
+static inline void vset_##NAME##_insert(vset_##NAME * set, const TYPE * elem)  \
+{                                                                              \
+    vset_void_insert((vset_void *)set, (const void *)elem);                    \
+}                                                                              \
+                                                                               \
+static inline vset_##NAME * vset_##NAME##_insert_arr(                          \
+    vset_##NAME * set,                                                         \
+    const TYPE * arr,                                                          \
+    size_t len                                                                 \
+)                                                                              \
+{                                                                              \
+    return (vset_##NAME *)vset_void_insert_arr((vset_void *)set,               \
+        (const void *)arr, len);                                               \
+}                                                                              \
+                                                                               \
+                                                                               \
+static inline vset_##NAME * vset_##NAME##_create_arr(                          \
+    vset_##NAME * set,                                                         \
+    arr_fcomp compar,                                                          \
+    const TYPE * arr,                                                          \
+    size_t len                                                                 \
+)                                                                              \
+{                                                                              \
+    return (vset_##NAME *)vset_void_create_arr((vset_void *)set, sizeof(TYPE), \
+        compar, (const void *)arr, len);                                       \
+}                                                                              \
+                                                                               \
+static inline void vset_##NAME##_destroy(vset_##NAME * set)                    \
+{                                                                              \
+    vset_void_destroy((vset_void *)set);                                       \
+}                                                                              \
+                                                                               \
+static inline void vset_##NAME##_shrink_to_fit(vset_##NAME * set)              \
+{                                                                              \
+    vset_void_shrink_to_fit((vset_void *)set);                                 \
+}                                                                              \
+                                                                               \
+static inline bool vset_##NAME##_is_empty(const vset_##NAME * set)             \
+{                                                                              \
+    return vset_void_is_empty((vset_void *)set);                               \
+}                                                                              \
+                                                                               \
+static inline size_t vset_##NAME##_size(const vset_##NAME * set)               \
+{                                                                              \
+    return vset_void_size((vset_void *)set);                                   \
+}                                                                              \
+                                                                               \
+static inline size_t vset_##NAME##_cap(const vset_##NAME * set)                \
+{                                                                              \
+    return vset_void_cap((vset_void *)set);                                    \
+}                                                                              \
+                                                                               \
+static inline arr_fcomp vset_##NAME##_compar(const vset_##NAME * set)          \
+{                                                                              \
+    return vset_void_compar((vset_void *)set);                                 \
+}                                                                              \
+                                                                               \
+static inline const TYPE * vset_##NAME##_data(const vset_##NAME * set)         \
+{                                                                              \
+    return (TYPE *)vset_void_data((vset_void *)set);                           \
+}                                                                              \
+                                                                               \
+static inline const vect_void * vset_##NAME##_vect(const vset_##NAME * set)    \
+{                                                                              \
+    return vset_void_vect((vset_void *)set);                                   \
+}                                                                              \
+                                                                               \
+static inline void vset_##NAME##_reset(vset_##NAME * set)                      \
+{                                                                              \
+    vset_void_reset((vset_void *)set);                                         \
+}                                                                              \
+                                                                               \
+static inline vset_##NAME vset_##NAME##_copy(                                  \
+    const vset_##NAME * src,                                                   \
+    bool * is_ok                                                               \
+)                                                                              \
+{                                                                              \
+    vset_##NAME ret;                                                           \
+    ret.set = vset_void_copy(&src->set, is_ok);                                \
+    return ret;                                                                \
+}                                                                              \
+                                                                               \
+static inline void vset_##NAME##_erase(vset_##NAME * set, const TYPE * val)    \
+{                                                                              \
+    vset_void_erase((vset_void *)set, (const void *)val);                      \
+}                                                                              \
+                                                                               \
+static inline bool vset_##NAME##_is_eq(                                        \
+    const vset_##NAME * a,                                                     \
+    const vset_##NAME * b                                                      \
+)                                                                              \
+{                                                                              \
+    return vset_void_is_eq(&a->set, &b->set);                                  \
+}                                                                              \
+                                                                               \
+static inline const TYPE * vset_##NAME##_has(                                  \
+    const vset_##NAME * set,                                                   \
+    const TYPE * elem                                                          \
+)                                                                              \
+{                                                                              \
+    return (const TYPE *)vset_void_has((vset_void *)set, (const void *)elem);  \
+}                                                                              \
+                                                                               \
+static inline const TYPE * vset_##NAME##_get(                                  \
+    const vset_##NAME * set,                                                   \
+    size_t index                                                               \
+)                                                                              \
+{                                                                              \
+    return (const TYPE *)vset_void_get((vset_void *)set, index);               \
+}                                                                              \
+                                                                               \
+static inline vset_##NAME * vset_##NAME##_diff(                                \
+    vset_##NAME * diff,                                                        \
+    const vset_##NAME * set_a,                                                 \
+    const vset_##NAME * set_b                                                  \
+)                                                                              \
+{                                                                              \
+    return (vset_##NAME *)vset_void_diff((vset_void *)diff, (vset_void *)set_a,\
+        (vset_void *)set_b);                                                   \
+}                                                                              \
+                                                                               \
+static inline vset_##NAME * vset_##NAME##_union(                               \
+    vset_##NAME * un,                                                          \
+    const vset_##NAME * set_a,                                                 \
+    const vset_##NAME * set_b                                                  \
+)                                                                              \
+{                                                                              \
+    return (vset_##NAME *)vset_void_union((vset_void *)un, (vset_void *)set_a, \
+        (vset_void *)set_b);                                                   \
+}                                                                              \
+                                                                               \
+static inline vset_##NAME * vset_##NAME##_intersect(                           \
+    vset_##NAME * isc,                                                         \
+    const vset_##NAME * set_a,                                                 \
+    const vset_##NAME * set_b                                                  \
+)                                                                              \
+{                                                                              \
+    return (vset_##NAME *)vset_void_intersect((vset_void *)isc,                \
+        (vset_void *)set_a, (vset_void *)set_b);                               \
+} typedef TYPE vset_##NAME##_dont_forget_the_semi
+#endif
