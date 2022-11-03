@@ -1,1 +1,1 @@
-g++ -I../../src ../../src/vect/vect.c ../../src/arr_algo/arr_algo.c ../../src/oa_hash/oa_hash.c ../../src/bit_set/bit_set.c ../../src/ch_hash/ch_hash.c ../../src/ch_hash/ch_hash_priv.c ../../src/ptr_hash/ptr_hash.c ../../src/ptr_hash/ptr_hash_priv.c hashes.cpp -o hashes.prof.bin -Wall -Wfatal-errors -pg -O3 -flto
+g++ -I../../src ../../src/oa_hash/oa_hash.c ../../src/bit_set/bit_set.c ../../src/ch_hash/ch_hash.c ../../src/ch_hash/ch_hash_priv.c ../../src/ptr_hash/ptr_hash.c ../../src/ptr_hash/ptr_hash_priv.c hashes.cpp -o hashes.prof.bin -Wall -Wfatal-errors -pg -O3 -flto
