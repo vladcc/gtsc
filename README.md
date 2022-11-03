@@ -50,23 +50,22 @@ int main(int argc, char * argv[])
 	foo a; bar b;
 	
 	a.n = 10;
-	memcpy_foo_safe(&a, &b);	
+	memcpy_foo_safe(&b, &a);
 	return 0;
 }
 ```
 
 This does not compile and provides a verbose error message:
 ```
-$ gcc tmp.c -o tmp.bin 
 tmp.c: In function ‘main’:
-tmp.c:19:29: warning: passing argument 2 of ‘memcpy_foo_safe’ from incompatible pointer type [-Wincompatible-pointer-types]
-   19 |         memcpy_foo_safe(&a, &b);
-      |                             ^~
-      |                             |
-      |                             bar *
-tmp.c:7:56: note: expected ‘foo *’ but argument is of type ‘bar *’
+tmp.c:19:25: warning: passing argument 1 of ‘memcpy_foo_safe’ from incompatible pointer type [-Wincompatible-pointer-types]
+   19 |         memcpy_foo_safe(&b, &a);
+      |                         ^~
+      |                         |
+      |                         bar *
+tmp.c:7:43: note: expected ‘foo *’ but argument is of type ‘bar *’
     7 | static inline TYPE * memcpy_##NAME(TYPE * dest, TYPE * src)                    \
-      |                                                        ^
+      |                                           ^
 tmp.c:12:1: note: in expansion of macro ‘MEMCPY_DEFINE’
    12 | MEMCPY_DEFINE(foo_safe, foo);
       | ^~~~~~~~~~~~~
@@ -96,8 +95,8 @@ is extended to all generic types in gtsc.
 ## Templates?
 Templates are cool, but this approach goes the opposite way. Templates, like in
 C++ or in other C header and macro based implementations, generate code. That
-is, generally, vector<int> would generate a vector implementation for ints, and
-vector<double> would generate a different vector implementation for doubles.
+is, generally, vector\<int\> would generate a vector implementation for ints, and
+vector\<double\> would generate a different vector implementation for doubles.
 There would be two separate push_back() functions, for example:
 ```
 #include <vector>
