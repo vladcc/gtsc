@@ -22,7 +22,7 @@ typedef struct bar {int n;} bar;
 int main(int argc, char * argv[])
 {
 	foo a; bar b;
-	
+
 	a.n = 10;
 	memcpy(&b, &a, sizeof(foo)); // <-- bad and unsafe
 	return 0;
@@ -48,7 +48,7 @@ MEMCPY_DEFINE(foo_safe, foo);
 int main(int argc, char * argv[])
 {
 	foo a; bar b;
-	
+
 	a.n = 10;
 	memcpy_foo_safe(&b, &a);
 	return 0;
@@ -105,7 +105,7 @@ int main(int argc, char * argv[])
 {
 	std::vector<int> ints;
 	ints.push_back(1);
-	
+
 	std::vector<double> dbls;
 	dbls.push_back(1.0);
 	return 0;
@@ -129,16 +129,16 @@ int main(int argc, char * argv[])
 {
 	vect_int vint;
 	vect_int_create(&vint);
-	
+
 	int n = 1;
 	vect_int_push(&vint, &n);
-	
+
 	vect_dbl vdbl;
 	vect_dbl_create(&vdbl);
-	
+
 	double d = 1.0;
 	vect_dbl_push(&vdbl, &d);
-	
+
 	return 0;
 }
 ...
@@ -182,26 +182,26 @@ all removed and not removed (LAll), and then iterates over the container.
 2 million, random 20 character strings:
 ```
 # such as these
-$ cat /dev/random | tr -dc '[[:print:]]' | head -c $((20 * 2000000)) | sed -E 's/.{20}/&\n/g' | head -n5
-`#s9DJz^>::z~ehujcEe
-o.5<DKP.ww[`ETvkOqz(
->Ww$NTaO"^',6H )4|5%
-gO6JzI4|-Xp*v048'&'>
-r0v]3s(b_}=dYWd3,*3J
+$ cat /dev/urandom | tr -dc '[[:print:]]' | head -c $((20 * 2000000)) | sed -E 's/.{20}/&\n/g' | head -n5
+|x=>gF~LJu}0zw;X3~_-
+BpBj.+VwsF}\%*#K!q#:
+<h{ArG"P_cF*,|.`4Bcc
++/XE>ytPbm"J}%6. *+9
+pgt=3NRPCQ8abyxGnO7:
 
-$ cat /dev/random | tr -dc '[[:print:]]' | head -c $((20 * 2000000)) | sed -E 's/.{20}/&\n/g' | ./hashes.no-opt.bin | column -s';' -t
+$ cat /dev/urandom | tr -dc '[[:print:]]' | head -c $((20 * 2000000)) | sed -E 's/.{20}/&\n/g' | ./hashes.no-opt.bin | column -s';' -t
 Things   Rep  Type            Insert  Lookup  Remove  LFind   LNotFind  LAll    Iter
-2000000  1    oa_hash         0.935s  0.403s  0.240s  0.128s  0.228s    0.357s  0.071s
-2000000  1    ch_hash         0.930s  0.469s  0.287s  0.147s  0.224s    0.368s  0.112s
-2000000  1    ptr_hash        0.777s  0.447s  0.271s  0.141s  0.207s    0.347s  0.067s
-2000000  1    std::unord_map  1.068s  0.614s  0.517s  0.232s  0.234s    0.467s  0.135s
+2000000  1    oa_hash         0.935s  0.400s  0.238s  0.128s  0.228s    0.349s  0.077s
+2000000  1    ch_hash         0.926s  0.469s  0.291s  0.145s  0.223s    0.369s  0.115s
+2000000  1    ptr_hash        0.782s  0.446s  0.272s  0.139s  0.211s    0.349s  0.069s
+2000000  1    std::unord_map  1.070s  0.628s  0.494s  0.232s  0.233s    0.457s  0.143s
 
-$ cat /dev/random | tr -dc '[[:print:]]' | head -c $((20 * 2000000)) | sed -E 's/.{20}/&\n/g' | ./hashes.opt.bin | column -s';' -t
+$ cat /dev/urandom | tr -dc '[[:print:]]' | head -c $((20 * 2000000)) | sed -E 's/.{20}/&\n/g' | ./hashes.opt.bin | column -s';' -t
 Things   Rep  Type            Insert  Lookup  Remove  LFind   LNotFind  LAll    Iter
-2000000  1    oa_hash         0.655s  0.326s  0.195s  0.102s  0.163s    0.262s  0.027s
-2000000  1    ch_hash         0.643s  0.371s  0.183s  0.107s  0.123s    0.202s  0.029s
-2000000  1    ptr_hash        0.562s  0.302s  0.158s  0.081s  0.122s    0.199s  0.026s
-2000000  1    std::unord_map  0.720s  0.457s  0.334s  0.165s  0.127s    0.278s  0.067s
+2000000  1    oa_hash         0.672s  0.321s  0.194s  0.101s  0.159s    0.257s  0.028s
+2000000  1    ch_hash         0.632s  0.364s  0.180s  0.104s  0.121s    0.198s  0.029s
+2000000  1    ptr_hash        0.559s  0.297s  0.157s  0.079s  0.121s    0.196s  0.025s
+2000000  1    std::unord_map  0.706s  0.439s  0.327s  0.160s  0.123s    0.233s  0.063s
 ```
 
 It fares pretty well against the std::unordered_map. This is not an attack on
