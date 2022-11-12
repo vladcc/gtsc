@@ -1638,6 +1638,29 @@ static bool test_chs_int_create(void)
 		
 		check(chhid_test_copy(cidh));
 		
+		{
+			// use named copy function
+			bool is_ok = false;
+			chs_int copy_, * copy = &copy_;
+			
+			*copy = chs_int_copy(cidh, &is_ok);
+			check(is_ok);
+			
+			check(5 == chs_priv_pool_curr_cap(&copy->tbl.chain_pool));
+			check(0 == copy->tbl.elems);
+			check(chs_int_elems(copy) == copy->tbl.elems);
+			check(chs_int_is_empty(copy));
+			check(chs_int_cap(copy) == 1);
+			check(sizeof(int) == copy->tbl.key_size);
+			
+			check(chhid_is_tbl_clear(copy));
+			check(chhid_get_tbl(copy));
+			check(chhid_get_cmp(copy) == icmp);
+			check(chhid_get_hash(copy) == get_ihash);
+			
+			chs_int_destroy(copy);
+		}
+		
 		check(icmp_calls(0));
 		check(hash_calls(0));
 		
@@ -2962,8 +2985,8 @@ static bool test_chs_int_remove(void)
 	return true;
 }
 
-
-CH_SET_DEFINE(pint, int *);
+#include "test_ch_set_types.h"
+// CH_SET_DEFINE(pint, int *);
 
 static bool test_chs_ptrs(void)
 {

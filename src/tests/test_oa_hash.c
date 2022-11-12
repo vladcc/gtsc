@@ -16,7 +16,7 @@ static bool map_node_is_eq(map_node lsh, map_node rhs)
 	return (lsh.key == rhs.key) && (lsh.val == rhs.val);
 }
 
-ARR_ALGO_DEFINE(mtype, map_node);
+#include "test_oa_hash_types.h"
 
 #define bit_taken(n)    ((n)*2)
 #define bit_vacant(n)   (((n)*2)+1)
@@ -2151,7 +2151,7 @@ static bool test_oah_intd_overwrite(void)
 	return true;
 }
 
-OA_HASH_DEFINE(foo, int, void *);
+// OA_HASH_DEFINE(foo, int, void *);
 
 static bool test_oah_foo_overwrite(void)
 {
@@ -2183,7 +2183,7 @@ static bool test_oah_foo_overwrite(void)
 	return true;
 }
 
-OA_HASH_DEFINE(bar, void *, int);
+// OA_HASH_DEFINE(bar, void *, int);
 
 static bool test_oah_bar_overwrite(void)
 {
@@ -2212,7 +2212,7 @@ static bool test_oah_bar_overwrite(void)
 	return true;
 }
 
-OA_HASH_DEFINE(baz, void *, void *);
+// OA_HASH_DEFINE(baz, void *, void *);
 
 static bool test_oah_baz_overwrite(void)
 {

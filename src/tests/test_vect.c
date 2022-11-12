@@ -197,12 +197,12 @@ static bool test_vect_void_last_get_set_len_zero_distance(void)
 	int arr_zero_len[3] = {0, 0, 0};
 	int arr_zero_cap[ASIZE] = {0, 0, 0, 0, 0};
 	
-	check(!memcmp(vv->data, arr_zero_len, 3*sizeof(int)) == 0);
-	check(!memcmp(vv->data, arr_zero_cap, ASIZE*sizeof(int)) == 0);
+	check(!(memcmp(vv->data, arr_zero_len, 3*sizeof(int)) == 0));
+	check(!(memcmp(vv->data, arr_zero_cap, ASIZE*sizeof(int)) == 0));
 	
 	vect_void_len_zero(vv);
 	check(memcmp(vv->data, arr_zero_len, 3*sizeof(int)) == 0);
-	check(!memcmp(vv->data, arr_zero_cap, ASIZE*sizeof(int)) == 0);
+	check(!(memcmp(vv->data, arr_zero_cap, ASIZE*sizeof(int)) == 0));
 	
 	vect_void_cap_zero(vv);
 	check(memcmp(vv->data, arr_zero_len, 3*sizeof(int)) == 0);
@@ -1273,12 +1273,12 @@ static bool test_vect_tint_last_get_set_len_zero_distance(void)
 	int arr_zero_len[3] = {0, 0, 0};
 	int arr_zero_cap[ASIZE] = {0, 0, 0, 0, 0};
 	
-	check(!memcmp(vv->vect.data, arr_zero_len, 3*sizeof(int)) == 0);
-	check(!memcmp(vv->vect.data, arr_zero_cap, ASIZE*sizeof(int)) == 0);
+	check(!(memcmp(vv->vect.data, arr_zero_len, 3*sizeof(int)) == 0));
+	check(!(memcmp(vv->vect.data, arr_zero_cap, ASIZE*sizeof(int)) == 0));
 	
 	vect_tint_len_zero(vv);
 	check(memcmp(vv->vect.data, arr_zero_len, 3*sizeof(int)) == 0);
-	check(!memcmp(vv->vect.data, arr_zero_cap, ASIZE*sizeof(int)) == 0);
+	check(!(memcmp(vv->vect.data, arr_zero_cap, ASIZE*sizeof(int)) == 0));
 	
 	vect_tint_cap_zero(vv);
 	check(memcmp(vv->vect.data, arr_zero_len, 3*sizeof(int)) == 0);

@@ -15,7 +15,7 @@ static bool set_node_is_eq(set_node lsh, set_node rhs)
 	return (lsh.key == rhs.key);
 }
 
-ARR_ALGO_DEFINE(mtype, set_node);
+#include "test_oa_set_types.h"
 
 #define bit_taken(n)    ((n)*2)
 #define bit_vacant(n)   (((n)*2)+1)
@@ -1889,7 +1889,7 @@ static bool test_oas_intd_insert_lookup_remove_clear_iter(void)
 	return true;
 }
 
-OA_SET_DEFINE(baz, void *);
+// OA_SET_DEFINE(baz, void *);
 
 static bool test_oas_baz_ptr(void)
 {

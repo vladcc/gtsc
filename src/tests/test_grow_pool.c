@@ -390,6 +390,8 @@ static bool test_gpool_node_create(void)
 
 	{
 		check(gpool_node_create_pod(pool, 3) == pool);
+		check(gpool_node_elem_size(pool));
+		check(gpool_node_elem_num(pool) == 3);
 		check(vect_void_data(vect));
 		check(sizeof(size_t)*2 == vect_void_elem_size(vect));
 		check(0 == vect_void_len(vect));
@@ -773,7 +775,8 @@ static bool test_gpool_node_stress(void)
 	return true;
 }
 
-GROW_POOL_DEFINE(allocs, alloc_s);
+#include "test_grow_pool_types.h"
+// GROW_POOL_DEFINE(allocs, alloc_s);
 
 static bool test_gpool_allocs_alloc(void)
 {

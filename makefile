@@ -56,7 +56,7 @@ TEST_MISC_BIN := $(OBJ_DIR)/test_$(MISC_BASE).bin
 .PHONY: misc_test_compile
 misc_test_compile: $(TEST_MISC_BIN)
 
-TEST_MISC_DEP = $(MISC_H) $(TEST_MISC_C)
+TEST_MISC_DEP = $(TEST_MISC_C)
 $(TEST_MISC_BIN): $(TEST_MISC_DEP)
 	$(CMPL) $^ -o $@ $(CFLAGS)
 
@@ -237,7 +237,7 @@ TEST_NSLIST_BIN := $(OBJ_DIR)/test_$(NSLIST_BASE).bin
 .PHONY: nslist_test_compile
 nslist_test_compile: $(TEST_NSLIST_BIN)
 
-TEST_NSLIST_DEP = $(NSLIST_H) $(TEST_NSLIST_C)
+TEST_NSLIST_DEP = $(TEST_NSLIST_C)
 $(TEST_NSLIST_BIN): $(TEST_NSLIST_DEP)
 	$(CMPL) $^ -o $@ $(CFLAGS)
 

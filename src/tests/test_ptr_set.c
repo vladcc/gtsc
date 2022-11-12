@@ -1678,6 +1678,28 @@ static bool test_ptrs_int_create(void)
 		
 		check(ptrhid_test_copy(cvh));
 		
+		{
+			// use named copy function
+			bool is_ok = false;
+			ptrs_int copy_, * copy = &copy_;
+			
+			*copy = ptrs_int_copy(cvh, &is_ok);
+			check(is_ok);
+			
+			check(ptrs_priv_pool_curr_cap(&copy->tbl.chain_pool) == 5);
+			check(0 == copy->tbl.elems);
+			check(ptrs_int_elems(copy) == copy->tbl.elems);
+			check(ptrs_int_is_empty(copy));
+			check(ptrs_int_cap(copy) == 1);
+			
+			check(ptrhid_is_tbl_clear(copy));
+			check(ptrhid_get_tbl(copy));
+			check(ptrhid_get_cmp(copy) == icmp);
+			check(ptrhid_get_hash(copy) == get_ihash);
+			
+			ptrs_int_destroy(copy);
+		}
+		
 		check(icmp_calls(0));
 		check(hash_calls(0));
 		
@@ -3052,8 +3074,8 @@ static bool test_ptrs_int_remove(void)
 	return true;
 }
 
-
-PTR_SET_DEFINE(pint, int *);
+#include "test_ptr_set_types.h"
+// PTR_SET_DEFINE(pint, int *);
 
 static bool test_ptrs_ptrs(void)
 {
