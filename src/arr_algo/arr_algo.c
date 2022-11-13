@@ -196,7 +196,7 @@ void arr_void_swap(arr_void_info * inf, size_t a, size_t b, void * elem_tmp)
 	void * pb = offset(arr, b, esz);
 	
 	memcpy(elem_tmp, pa, esz);
-	memcpy(pa, pb, esz);
+	memmove(pa, pb, esz);
 	memcpy(pb, elem_tmp, esz);
 }
 

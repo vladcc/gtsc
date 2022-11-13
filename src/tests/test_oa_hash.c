@@ -4,8 +4,6 @@
 #include <string.h>
 #include "oa_hash/oa_hash.h"
 
-#include "arr_algo/arr_algo.h"
-
 typedef struct map_node {
 	int key;
 	double val;
@@ -21,7 +19,7 @@ static bool map_node_is_eq(map_node lsh, map_node rhs)
 #define bit_taken(n)    ((n)*2)
 #define bit_vacant(n)   (((n)*2)+1)
 
-#define ins_val_make(x) ((double)((x)*10+2.43))
+#define ins_val_make(x) ((double)((x)*10+2.0))
 
 #define UNUSED(x) (void)(x)
 
@@ -207,6 +205,37 @@ static bool test_oah_void_create_destroy(void)
 	return true;
 }
 
+typedef unsigned char byte;
+static void toah_set_tbl_to(oah_void * tbl, map_node node)
+{
+	size_t kv_pair_size = tbl->kv_pair_size;
+	size_t val_offs = tbl->val_offs;
+	byte * data = (byte *)tbl->data;
+	byte * elem = NULL;
+	for (size_t i = 0, end = tbl->tbl_size; i < end; ++i)
+	{
+		elem = data + (kv_pair_size * i);
+		*((int *)elem) = node.key;
+		elem += val_offs;
+		*((double *)(elem)) = node.val;
+	}
+}
+
+static size_t toah_lookup_to_index(oah_void * tbl, void * looked_up_val)
+{
+	return ((byte *)looked_up_val - (byte *)tbl->data) / tbl->kv_pair_size;
+}
+
+map_node map_elem_to_node(oah_void * tbl, size_t index)
+{
+	map_node ret;
+	byte * elem = (byte *)tbl->data + (index * tbl->kv_pair_size);
+	ret.key = *((int *)elem);
+	elem += tbl->val_offs;
+	ret.val = *((double *)(elem));
+	return ret;
+}
+
 static bool test_oah_void_insert_lookup_remove_clear_iter(void)
 {
 	// simple insert, remove
@@ -229,19 +258,19 @@ static bool test_oah_void_insert_lookup_remove_clear_iter(void)
 		check(icmp == oah->cmp);
 		check(oah_void_is_empty(oah));
 	
-		arr_mtype_info the_tbl_, * the_tbl = &the_tbl_;
-		arr_mtype_info_set(the_tbl, (map_node *)oah->data, 0, oah->tbl_size);
 		
 		map_node null_node = {0, ins_val_make(0)};
 		map_node expect = null_node;
-		map_node * ptbl = (map_node *)oah->data;
+		oah_void * ptbl = oah;
 		size_t max = oah->tbl_size;
-		arr_mtype_set_to(the_tbl, &null_node);
+
+		toah_set_tbl_to(oah, null_node);
+
 		
 		for (size_t i = 0; i < max; ++i)
 		{				
 			expect.key = 0; expect.val = ins_val_make(0);
-			check(map_node_is_eq(expect, *arr_mtype_get(ptbl, i)));
+			check(map_node_is_eq(map_elem_to_node(ptbl, i), expect));
 		}
 		
 		check(oah_void_is_empty(oah));
@@ -258,7 +287,7 @@ static bool test_oah_void_insert_lookup_remove_clear_iter(void)
 		check(*(double *)oah_void_lookup(oah, &insert) == ins_val);
 
 		expect.key = insert; expect.val = ins_val_make(insert);
-		check(map_node_is_eq(*arr_mtype_get(ptbl, ins_ind), expect));
+		check(map_node_is_eq(map_elem_to_node(ptbl, ins_ind), expect));
 
 		check(!oah_void_is_empty(oah));
 		check(1 == oah_void_entries(oah));
@@ -269,7 +298,7 @@ static bool test_oah_void_insert_lookup_remove_clear_iter(void)
 		check(*(double *)oah_void_lookup(oah, &insert) == ins_val);
 
 		expect.key = insert; expect.val = ins_val_make(insert);
-		check(map_node_is_eq(*arr_mtype_get(ptbl, ins_ind), expect));
+		check(map_node_is_eq(map_elem_to_node(ptbl, ins_ind), expect));
 
 		check(!oah_void_is_empty(oah));
 		check(1 == oah_void_entries(oah));
@@ -313,21 +342,19 @@ static bool test_oah_void_insert_lookup_remove_clear_iter(void)
 		
 		check(test_oah_void_copy(oah));
 		
-		arr_mtype_info the_tbl_, * the_tbl = &the_tbl_;
-		arr_mtype_info_set(the_tbl, (map_node *)oah->data, 0, oah->tbl_size);
 		
 		map_node node_null = {0, ins_val_make(0)};
 		map_node expect = node_null;
 		int key = 0;
-		map_node * ptbl = (map_node *)oah->data;
+		oah_void * ptbl = oah;
 		size_t max = oah->elem_left;
 		
-		arr_mtype_set_to(the_tbl, &node_null);
+		toah_set_tbl_to(oah, node_null);
 		
 		for (size_t i = 0; i < max; ++i)
 		{	
 			expect.key = 0; expect.val = ins_val_make(0);
-			check(map_node_is_eq(expect, *arr_mtype_get(ptbl, i)));
+			check(map_node_is_eq(expect, map_elem_to_node(ptbl, i)));
 		}
 		
 		key = 0;
@@ -424,21 +451,20 @@ static bool test_oah_void_insert_lookup_remove_clear_iter(void)
 		check(icmp == oah->cmp);
 		check(oah_void_is_empty(oah));
 	
-		arr_mtype_info the_tbl_, * the_tbl = &the_tbl_;
-		arr_mtype_info_set(the_tbl, (map_node *)oah->data, 0, oah->tbl_size);
 		
 		int key = 0;
 		map_node node_null = {0, ins_val_make(0)};
 		map_node expect = node_null;
-		map_node * ptbl = (map_node *)oah->data;
+		oah_void * ptbl = oah;
 		size_t max = oah->tbl_size;
+	
+		toah_set_tbl_to(oah, node_null);
 		
-		arr_mtype_set_to(the_tbl, &node_null);
 		
 		for (size_t i = 0; i < max; ++i)
 		{				
 			expect.key = 0; expect.val = ins_val_make(0);
-			check(map_node_is_eq(expect, *arr_mtype_get(ptbl, i)));
+			check(map_node_is_eq(expect, map_elem_to_node(ptbl, i)));
 		}
 		check(oah_void_is_empty(oah));
 		check(0 == oah_void_entries(oah));
@@ -451,7 +477,7 @@ static bool test_oah_void_insert_lookup_remove_clear_iter(void)
 		check(oah_void_insert(oah, &insert, &ins_val) == oah);
 
 		expect.key = insert; expect.val = ins_val_make(insert);
-		check(map_node_is_eq(*arr_mtype_get(ptbl, ins_ind), expect));
+		check(map_node_is_eq(map_elem_to_node(ptbl, ins_ind), expect));
 
 		check(!oah_void_is_empty(oah));
 		check(1 == oah_void_entries(oah));
@@ -465,11 +491,10 @@ static bool test_oah_void_insert_lookup_remove_clear_iter(void)
 		check(2 == real_ins_ind);
 		check(oah_void_insert(oah, &insert, &ins_val) == oah);
 		check(*(double *)oah_void_lookup(oah, &insert) == ins_val);
-		check(arr_mtype_distance(the_tbl,
-			(const map_node *)((unsigned char *)oah_void_lookup(oah, &insert) - oah->val_offs)) == real_ins_ind);
+		check(toah_lookup_to_index(oah, ((unsigned char *)oah_void_lookup(oah, &insert) - oah->val_offs)) == real_ins_ind);
 
 		expect.key = insert; expect.val = ins_val_make(insert);
-		check(map_node_is_eq(*arr_mtype_get(ptbl, real_ins_ind), expect)); // next free slot
+		check(map_node_is_eq(map_elem_to_node(ptbl, real_ins_ind), expect)); // next free slot
 
 		check(!oah_void_is_empty(oah));
 		check(2 == oah_void_entries(oah));
@@ -483,11 +508,10 @@ static bool test_oah_void_insert_lookup_remove_clear_iter(void)
 		check(3 == real_ins_ind);
 		check(oah_void_insert(oah, &insert, &ins_val) == oah);
 		check(*(double *)oah_void_lookup(oah, &insert) == ins_val);
-		check(arr_mtype_distance(the_tbl,
-			(const map_node *)oah_void_lookup(oah, &insert)) == real_ins_ind);
+		check(toah_lookup_to_index(oah, oah_void_lookup(oah, &insert)) == real_ins_ind);
 
 		expect.key = insert; expect.val = ins_val_make(insert);
-		check(map_node_is_eq(*arr_mtype_get(ptbl, real_ins_ind), expect)); // next free slot
+		check(map_node_is_eq(map_elem_to_node(ptbl, real_ins_ind), expect)); // next free slot
 
 		check(!oah_void_is_empty(oah));
 		check(3 == oah_void_entries(oah));
@@ -501,11 +525,10 @@ static bool test_oah_void_insert_lookup_remove_clear_iter(void)
 		check(4 == real_ins_ind);
 		check(oah_void_insert(oah, &insert, &ins_val) == oah);
 		check(*(double *)oah_void_lookup(oah, &insert) == ins_val);
-		check(arr_mtype_distance(the_tbl,
-			(const map_node *)oah_void_lookup(oah, &insert)) == real_ins_ind);
+		check(toah_lookup_to_index(oah, oah_void_lookup(oah, &insert)) == real_ins_ind);
 
 		expect.key = insert; expect.val = ins_val_make(insert);
-		check(map_node_is_eq(*arr_mtype_get(ptbl, real_ins_ind), expect)); // next free slot
+		check(map_node_is_eq(map_elem_to_node(ptbl, real_ins_ind), expect)); // next free slot
 
 		check(!oah_void_is_empty(oah));
 		check(4 == oah_void_entries(oah));
@@ -530,11 +553,10 @@ static bool test_oah_void_insert_lookup_remove_clear_iter(void)
 		
 		key = 17;
 		check(*(double *)oah_void_lookup(oah, &key) == ins_val_make(17));
-		check(arr_mtype_distance(the_tbl,
-			(const map_node *)oah_void_lookup(oah, &key)) == 2);
+		check(toah_lookup_to_index(oah, oah_void_lookup(oah, &key)) == 2);
 
 		expect.key = key; expect.val = ins_val_make(key);
-		check(map_node_is_eq(*arr_mtype_get(ptbl, 2), expect)); // next free slot
+		check(map_node_is_eq(map_elem_to_node(ptbl, 2), expect)); // next free slot
 
 		check(!oah_void_is_empty(oah));
 		check(4 == oah_void_entries(oah));
@@ -582,11 +604,10 @@ static bool test_oah_void_insert_lookup_remove_clear_iter(void)
 		check(2 == real_ins_ind);
 		check(oah_void_insert(oah, &insert, &ins_val) == oah);
 		check(*(double *)oah_void_lookup(oah, &insert) == ins_val);
-		check(arr_mtype_distance(the_tbl,
-			(const map_node *)oah_void_lookup(oah, &insert)) == real_ins_ind);
+		check(toah_lookup_to_index(oah, oah_void_lookup(oah, &insert)) == real_ins_ind);
 
 		expect.key = insert; expect.val = ins_val_make(insert);
-		check(map_node_is_eq(*arr_mtype_get(ptbl, real_ins_ind), expect));
+		check(map_node_is_eq(map_elem_to_node(ptbl, real_ins_ind), expect));
 
 		check(!oah_void_is_empty(oah));
 		check(4 == oah_void_entries(oah));
@@ -638,20 +659,20 @@ static bool test_oah_void_insert_lookup_remove_clear_iter(void)
 		check(icmp == oah->cmp);
 		check(oah_void_is_empty(oah));
 	
-		arr_mtype_info the_tbl_, * the_tbl = &the_tbl_;
-		arr_mtype_info_set(the_tbl, (map_node *)oah->data, 0, oah->tbl_size);
 		
 		int key = 0;
 		map_node null_node = {0, ins_val_make(0)};
 		map_node expect = null_node;
-		map_node * ptbl = (map_node *)oah->data;
+		oah_void * ptbl = oah;
 		size_t max = oah->tbl_size;
-		arr_mtype_set_to(the_tbl, &null_node);
+
+		toah_set_tbl_to(oah, null_node);
+		
 		
 		for (size_t i = 0; i < max; ++i)
 		{				
 			expect.key = 0; expect.val = ins_val_make(0);
-			check(map_node_is_eq(expect, *arr_mtype_get(ptbl, i)));
+			check(map_node_is_eq(expect, map_elem_to_node(ptbl, i)));
 		}
 		
 		check(oah_void_is_empty(oah));
@@ -665,7 +686,7 @@ static bool test_oah_void_insert_lookup_remove_clear_iter(void)
 		check(oah_void_insert(oah, &insert, &ins_val) == oah);
 
 		expect.key = insert; expect.val = ins_val_make(insert);
-		check(map_node_is_eq(*arr_mtype_get(ptbl, ins_ind), expect));
+		check(map_node_is_eq(map_elem_to_node(ptbl, ins_ind), expect));
 
 		check(!oah_void_is_empty(oah));
 		check(1 == oah_void_entries(oah));
@@ -679,11 +700,10 @@ static bool test_oah_void_insert_lookup_remove_clear_iter(void)
 		check(15 == real_ins_ind);
 		check(oah_void_insert(oah, &insert, &ins_val) == oah);
 		check(*(double *)oah_void_lookup(oah, &insert) == ins_val);
-		check(arr_mtype_distance(the_tbl,
-			(const map_node *)oah_void_lookup(oah, &insert)) == real_ins_ind);
+		check(toah_lookup_to_index(oah, oah_void_lookup(oah, &insert)) == real_ins_ind);
 
 		expect.key = insert; expect.val = ins_val_make(insert);
-		check(map_node_is_eq(*arr_mtype_get(ptbl, real_ins_ind), expect)); // next free slot
+		check(map_node_is_eq(map_elem_to_node(ptbl, real_ins_ind), expect)); // next free slot
 
 		check(!oah_void_is_empty(oah));
 		check(2 == oah_void_entries(oah));
@@ -697,11 +717,10 @@ static bool test_oah_void_insert_lookup_remove_clear_iter(void)
 		check(0 == real_ins_ind);
 		check(oah_void_insert(oah, &insert, &ins_val) == oah);
 		check(*(double *)oah_void_lookup(oah, &insert) == ins_val);
-		check(arr_mtype_distance(the_tbl,
-			(const map_node *)oah_void_lookup(oah, &insert)) == real_ins_ind);
+		check(toah_lookup_to_index(oah, oah_void_lookup(oah, &insert)) == real_ins_ind);
 
 		expect.key = insert; expect.val = ins_val_make(insert);
-		check(map_node_is_eq(*arr_mtype_get(ptbl, real_ins_ind), expect)); // next free slot
+		check(map_node_is_eq(map_elem_to_node(ptbl, real_ins_ind), expect)); // next free slot
 
 		check(!oah_void_is_empty(oah));
 		check(3 == oah_void_entries(oah));
@@ -715,11 +734,10 @@ static bool test_oah_void_insert_lookup_remove_clear_iter(void)
 		check(1 == real_ins_ind);
 		check(oah_void_insert(oah, &insert, &ins_val) == oah);
 		check(*(double *)oah_void_lookup(oah, &insert) == ins_val);
-		check(arr_mtype_distance(the_tbl,
-			(const map_node *)oah_void_lookup(oah, &insert)) == real_ins_ind);
+		check(toah_lookup_to_index(oah, oah_void_lookup(oah, &insert)) == real_ins_ind);
 
 		expect.key = insert; expect.val = ins_val_make(insert);
-		check(map_node_is_eq(*arr_mtype_get(ptbl, real_ins_ind), expect)); // next free slot
+		check(map_node_is_eq(map_elem_to_node(ptbl, real_ins_ind), expect)); // next free slot
 
 		check(!oah_void_is_empty(oah));
 		check(4 == oah_void_entries(oah));
@@ -744,11 +762,10 @@ static bool test_oah_void_insert_lookup_remove_clear_iter(void)
 		
 		key = 16;
 		check(*(double *)oah_void_lookup(oah, &key) == ins_val_make(16));
-		check(arr_mtype_distance(the_tbl,
-			(const map_node *)oah_void_lookup(oah, &key)) == 0);
+		check(toah_lookup_to_index(oah, oah_void_lookup(oah, &key)) == 0);
 
 		expect.key = key; expect.val = ins_val_make(key);
-		check(map_node_is_eq(*arr_mtype_get(ptbl, 0), expect)); // next free slot
+		check(map_node_is_eq(map_elem_to_node(ptbl, 0), expect)); // next free slot
 
 		check(!oah_void_is_empty(oah));
 		check(4 == oah_void_entries(oah));
@@ -793,11 +810,10 @@ static bool test_oah_void_insert_lookup_remove_clear_iter(void)
 		check(2 == real_ins_ind);
 		check(oah_void_insert(oah, &insert, &ins_val) == oah);
 		check(*(double *)oah_void_lookup(oah, &insert) == ins_val);
-		check(arr_mtype_distance(the_tbl,
-			(const map_node *)oah_void_lookup(oah, &insert)) == real_ins_ind);
+		check(toah_lookup_to_index(oah, oah_void_lookup(oah, &insert)) == real_ins_ind);
 
 		expect.key = insert; expect.val = ins_val_make(insert);
-		check(map_node_is_eq(*arr_mtype_get(ptbl, real_ins_ind), expect));
+		check(map_node_is_eq(map_elem_to_node(ptbl, real_ins_ind), expect));
 
 		check(!oah_void_is_empty(oah));
 		check(4 == oah_void_entries(oah));
@@ -830,11 +846,10 @@ static bool test_oah_void_insert_lookup_remove_clear_iter(void)
 		check(0 == real_ins_ind);
 		check(oah_void_insert(oah, &insert, &ins_val) == oah);
 		check(*(double *)oah_void_lookup(oah, &insert) == ins_val);
-		check(arr_mtype_distance(the_tbl,
-			(const map_node *)oah_void_lookup(oah, &insert)) == real_ins_ind);
+		check(toah_lookup_to_index(oah, oah_void_lookup(oah, &insert)) == real_ins_ind);
 
 		expect.key = insert; expect.val = ins_val_make(insert);
-		check(map_node_is_eq(*arr_mtype_get(ptbl, real_ins_ind), expect));
+		check(map_node_is_eq(map_elem_to_node(ptbl, real_ins_ind), expect));
 
 		check(!oah_void_is_empty(oah));
 		check(5 == oah_void_entries(oah));
@@ -882,11 +897,10 @@ static bool test_oah_void_insert_lookup_remove_clear_iter(void)
 		check(3 == real_ins_ind);
 		check(oah_void_insert(oah, &insert, &ins_val) == oah);
 		check(*(double *)oah_void_lookup(oah, &insert) == ins_val);
-		check(arr_mtype_distance(the_tbl,
-			(const map_node *)oah_void_lookup(oah, &insert)) == real_ins_ind);
+		check(toah_lookup_to_index(oah, oah_void_lookup(oah, &insert)) == real_ins_ind);
 
 		expect.key = insert; expect.val = ins_val_make(insert);
-		check(map_node_is_eq(*arr_mtype_get(ptbl, real_ins_ind), expect));
+		check(map_node_is_eq(map_elem_to_node(ptbl, real_ins_ind), expect));
 
 		check(!oah_void_is_empty(oah));
 		check(5 == oah_void_entries(oah));
@@ -915,11 +929,10 @@ static bool test_oah_void_insert_lookup_remove_clear_iter(void)
 		check(13 == real_ins_ind);
 		check(oah_void_insert(oah, &insert, &ins_val) == oah);
 		check(*(double *)oah_void_lookup(oah, &insert) == ins_val);
-		check(arr_mtype_distance(the_tbl,
-			(const map_node *)oah_void_lookup(oah, &insert)) == real_ins_ind);
+		check(toah_lookup_to_index(oah, oah_void_lookup(oah, &insert)) == real_ins_ind);
 
 		expect.key = insert; expect.val = ins_val_make(insert);
-		check(map_node_is_eq(*arr_mtype_get(ptbl, real_ins_ind), expect));
+		check(map_node_is_eq(map_elem_to_node(ptbl, real_ins_ind), expect));
 
 		check(!oah_void_is_empty(oah));
 		check(6 == oah_void_entries(oah));
@@ -933,11 +946,10 @@ static bool test_oah_void_insert_lookup_remove_clear_iter(void)
 		check(1 == real_ins_ind);
 		check(oah_void_insert(oah, &insert, &ins_val) == oah);
 		check(*(double *)oah_void_lookup(oah, &insert) == ins_val);
-		check(arr_mtype_distance(the_tbl,
-			(const map_node *)oah_void_lookup(oah, &insert)) == real_ins_ind);
+		check(toah_lookup_to_index(oah, oah_void_lookup(oah, &insert)) == real_ins_ind);
 
 		expect.key = insert; expect.val = ins_val_make(insert);
-		check(map_node_is_eq(*arr_mtype_get(ptbl, real_ins_ind), expect));
+		check(map_node_is_eq(map_elem_to_node(ptbl, real_ins_ind), expect));
 
 		check(!oah_void_is_empty(oah));
 		check(7 == oah_void_entries(oah));
@@ -1289,19 +1301,18 @@ static bool test_oah_intd_insert_lookup_remove_clear_iter(void)
 		check(icmp == oah->tbl.cmp);
 		check(oah_intd_is_empty(oah));
 	
-		arr_mtype_info the_tbl_, * the_tbl = &the_tbl_;
-		arr_mtype_info_set(the_tbl, (map_node *)oah->tbl.data, 0, oah->tbl.tbl_size);
 		
 		map_node null_node = {0, ins_val_make(0)};
 		map_node expect = null_node;
-		map_node * ptbl = (map_node *)oah->tbl.data;
+		oah_void * ptbl = &oah->tbl;
 		size_t max = oah->tbl.tbl_size;
-		arr_mtype_set_to(the_tbl, &null_node);
+
+		toah_set_tbl_to(ptbl, null_node);
 		
 		for (size_t i = 0; i < max; ++i)
 		{				
 			expect.key = 0; expect.val = ins_val_make(0);
-			check(map_node_is_eq(expect, *arr_mtype_get(ptbl, i)));
+			check(map_node_is_eq(expect, map_elem_to_node(ptbl, i)));
 		}
 		
 		check(oah_intd_is_empty(oah));
@@ -1318,7 +1329,7 @@ static bool test_oah_intd_insert_lookup_remove_clear_iter(void)
 		check(*oah_intd_lookup(oah, &insert) == ins_val);
 
 		expect.key = insert; expect.val = ins_val_make(insert);
-		check(map_node_is_eq(*arr_mtype_get(ptbl, ins_ind), expect));
+		check(map_node_is_eq(map_elem_to_node(ptbl, ins_ind), expect));
 
 		check(!oah_intd_is_empty(oah));
 		check(1 == oah_intd_entries(oah));
@@ -1329,7 +1340,7 @@ static bool test_oah_intd_insert_lookup_remove_clear_iter(void)
 		check(*oah_intd_lookup(oah, &insert) == ins_val);
 
 		expect.key = insert; expect.val = ins_val_make(insert);
-		check(map_node_is_eq(*arr_mtype_get(ptbl, ins_ind), expect));
+		check(map_node_is_eq(map_elem_to_node(ptbl, ins_ind), expect));
 
 		check(!oah_intd_is_empty(oah));
 		check(1 == oah_intd_entries(oah));
@@ -1373,21 +1384,19 @@ static bool test_oah_intd_insert_lookup_remove_clear_iter(void)
 		
 		check(test_oah_intd_copy(oah));
 		
-		arr_mtype_info the_tbl_, * the_tbl = &the_tbl_;
-		arr_mtype_info_set(the_tbl, (map_node *)oah->tbl.data, 0, oah->tbl.tbl_size);
 		
 		map_node node_null = {0, ins_val_make(0)};
 		map_node expect = node_null;
 		int key = 0;
-		map_node * ptbl = (map_node *)oah->tbl.data;
+		oah_void * ptbl = &oah->tbl;
 		size_t max = oah->tbl.elem_left;
-		
-		arr_mtype_set_to(the_tbl, &node_null);
+	
+		toah_set_tbl_to(ptbl, node_null);
 		
 		for (size_t i = 0; i < max; ++i)
 		{	
 			expect.key = 0; expect.val = ins_val_make(0);
-			check(map_node_is_eq(expect, *arr_mtype_get(ptbl, i)));
+			check(map_node_is_eq(expect, map_elem_to_node(ptbl, i)));
 		}
 		
 		key = 0;
@@ -1484,21 +1493,19 @@ static bool test_oah_intd_insert_lookup_remove_clear_iter(void)
 		check(icmp == oah->tbl.cmp);
 		check(oah_intd_is_empty(oah));
 	
-		arr_mtype_info the_tbl_, * the_tbl = &the_tbl_;
-		arr_mtype_info_set(the_tbl, (map_node *)oah->tbl.data, 0, oah->tbl.tbl_size);
 		
 		int key = 0;
 		map_node node_null = {0, ins_val_make(0)};
 		map_node expect = node_null;
-		map_node * ptbl = (map_node *)oah->tbl.data;
+		oah_void * ptbl = &oah->tbl;
 		size_t max = oah->tbl.tbl_size;
 		
-		arr_mtype_set_to(the_tbl, &node_null);
+		toah_set_tbl_to(ptbl, node_null);
 		
 		for (size_t i = 0; i < max; ++i)
 		{				
 			expect.key = 0; expect.val = ins_val_make(0);
-			check(map_node_is_eq(expect, *arr_mtype_get(ptbl, i)));
+			check(map_node_is_eq(expect, map_elem_to_node(ptbl, i)));
 		}
 		check(oah_intd_is_empty(oah));
 		check(0 == oah_intd_entries(oah));
@@ -1511,7 +1518,7 @@ static bool test_oah_intd_insert_lookup_remove_clear_iter(void)
 		check(oah_intd_insert(oah, &insert, &ins_val) == oah);
 
 		expect.key = insert; expect.val = ins_val_make(insert);
-		check(map_node_is_eq(*arr_mtype_get(ptbl, ins_ind), expect));
+		check(map_node_is_eq(map_elem_to_node(ptbl, ins_ind), expect));
 
 		check(!oah_intd_is_empty(oah));
 		check(1 == oah_intd_entries(oah));
@@ -1525,11 +1532,10 @@ static bool test_oah_intd_insert_lookup_remove_clear_iter(void)
 		check(2 == real_ins_ind);
 		check(oah_intd_insert(oah, &insert, &ins_val) == oah);
 		check(*oah_intd_lookup(oah, &insert) == ins_val);
-		check(arr_mtype_distance(the_tbl,
-			(const map_node *)((unsigned char *)oah_intd_lookup(oah, &insert) - oah->tbl.val_offs)) == real_ins_ind);
+		check(toah_lookup_to_index(&oah->tbl, ((unsigned char *)oah_intd_lookup(oah, &insert) - oah->tbl.val_offs)) == real_ins_ind);
 
 		expect.key = insert; expect.val = ins_val_make(insert);
-		check(map_node_is_eq(*arr_mtype_get(ptbl, real_ins_ind), expect)); // next free slot
+		check(map_node_is_eq(map_elem_to_node(ptbl, real_ins_ind), expect)); // next free slot
 
 		check(!oah_intd_is_empty(oah));
 		check(2 == oah_intd_entries(oah));
@@ -1543,11 +1549,10 @@ static bool test_oah_intd_insert_lookup_remove_clear_iter(void)
 		check(3 == real_ins_ind);
 		check(oah_intd_insert(oah, &insert, &ins_val) == oah);
 		check(*oah_intd_lookup(oah, &insert) == ins_val);
-		check(arr_mtype_distance(the_tbl,
-			(const map_node *)oah_intd_lookup(oah, &insert)) == real_ins_ind);
+		check(toah_lookup_to_index(&oah->tbl, oah_intd_lookup(oah, &insert)) == real_ins_ind);
 
 		expect.key = insert; expect.val = ins_val_make(insert);
-		check(map_node_is_eq(*arr_mtype_get(ptbl, real_ins_ind), expect)); // next free slot
+		check(map_node_is_eq(map_elem_to_node(ptbl, real_ins_ind), expect)); // next free slot
 
 		check(!oah_intd_is_empty(oah));
 		check(3 == oah_intd_entries(oah));
@@ -1561,11 +1566,10 @@ static bool test_oah_intd_insert_lookup_remove_clear_iter(void)
 		check(4 == real_ins_ind);
 		check(oah_intd_insert(oah, &insert, &ins_val) == oah);
 		check(*oah_intd_lookup(oah, &insert) == ins_val);
-		check(arr_mtype_distance(the_tbl,
-			(const map_node *)oah_intd_lookup(oah, &insert)) == real_ins_ind);
+		check(toah_lookup_to_index(&oah->tbl, oah_intd_lookup(oah, &insert)) == real_ins_ind);
 
 		expect.key = insert; expect.val = ins_val_make(insert);
-		check(map_node_is_eq(*arr_mtype_get(ptbl, real_ins_ind), expect)); // next free slot
+		check(map_node_is_eq(map_elem_to_node(ptbl, real_ins_ind), expect)); // next free slot
 
 		check(!oah_intd_is_empty(oah));
 		check(4 == oah_intd_entries(oah));
@@ -1590,11 +1594,10 @@ static bool test_oah_intd_insert_lookup_remove_clear_iter(void)
 		
 		key = 17;
 		check(*oah_intd_lookup(oah, &key) == ins_val_make(17));
-		check(arr_mtype_distance(the_tbl,
-			(const map_node *)oah_intd_lookup(oah, &key)) == 2);
+		check(toah_lookup_to_index(&oah->tbl, oah_intd_lookup(oah, &key)) == 2);
 
 		expect.key = key; expect.val = ins_val_make(key);
-		check(map_node_is_eq(*arr_mtype_get(ptbl, 2), expect)); // next free slot
+		check(map_node_is_eq(map_elem_to_node(ptbl, 2), expect)); // next free slot
 
 		check(!oah_intd_is_empty(oah));
 		check(4 == oah_intd_entries(oah));
@@ -1642,11 +1645,10 @@ static bool test_oah_intd_insert_lookup_remove_clear_iter(void)
 		check(2 == real_ins_ind);
 		check(oah_intd_insert(oah, &insert, &ins_val) == oah);
 		check(*oah_intd_lookup(oah, &insert) == ins_val);
-		check(arr_mtype_distance(the_tbl,
-			(const map_node *)oah_intd_lookup(oah, &insert)) == real_ins_ind);
+		check(toah_lookup_to_index(&oah->tbl, oah_intd_lookup(oah, &insert)) == real_ins_ind);
 
 		expect.key = insert; expect.val = ins_val_make(insert);
-		check(map_node_is_eq(*arr_mtype_get(ptbl, real_ins_ind), expect));
+		check(map_node_is_eq(map_elem_to_node(ptbl, real_ins_ind), expect));
 
 		check(!oah_intd_is_empty(oah));
 		check(4 == oah_intd_entries(oah));
@@ -1698,20 +1700,19 @@ static bool test_oah_intd_insert_lookup_remove_clear_iter(void)
 		check(icmp == oah->tbl.cmp);
 		check(oah_intd_is_empty(oah));
 	
-		arr_mtype_info the_tbl_, * the_tbl = &the_tbl_;
-		arr_mtype_info_set(the_tbl, (map_node *)oah->tbl.data, 0, oah->tbl.tbl_size);
 		
 		int key = 0;
 		map_node null_node = {0, ins_val_make(0)};
 		map_node expect = null_node;
-		map_node * ptbl = (map_node *)oah->tbl.data;
+		oah_void * ptbl = &oah->tbl;
 		size_t max = oah->tbl.tbl_size;
-		arr_mtype_set_to(the_tbl, &null_node);
+
+		toah_set_tbl_to(ptbl, null_node);
 		
 		for (size_t i = 0; i < max; ++i)
 		{				
 			expect.key = 0; expect.val = ins_val_make(0);
-			check(map_node_is_eq(expect, *arr_mtype_get(ptbl, i)));
+			check(map_node_is_eq(expect, map_elem_to_node(ptbl, i)));
 		}
 		
 		check(oah_intd_is_empty(oah));
@@ -1725,7 +1726,7 @@ static bool test_oah_intd_insert_lookup_remove_clear_iter(void)
 		check(oah_intd_insert(oah, &insert, &ins_val) == oah);
 
 		expect.key = insert; expect.val = ins_val_make(insert);
-		check(map_node_is_eq(*arr_mtype_get(ptbl, ins_ind), expect));
+		check(map_node_is_eq(map_elem_to_node(ptbl, ins_ind), expect));
 
 		check(!oah_intd_is_empty(oah));
 		check(1 == oah_intd_entries(oah));
@@ -1739,11 +1740,10 @@ static bool test_oah_intd_insert_lookup_remove_clear_iter(void)
 		check(15 == real_ins_ind);
 		check(oah_intd_insert(oah, &insert, &ins_val) == oah);
 		check(*oah_intd_lookup(oah, &insert) == ins_val);
-		check(arr_mtype_distance(the_tbl,
-			(const map_node *)oah_intd_lookup(oah, &insert)) == real_ins_ind);
+		check(toah_lookup_to_index(&oah->tbl, oah_intd_lookup(oah, &insert)) == real_ins_ind);
 
 		expect.key = insert; expect.val = ins_val_make(insert);
-		check(map_node_is_eq(*arr_mtype_get(ptbl, real_ins_ind), expect)); // next free slot
+		check(map_node_is_eq(map_elem_to_node(ptbl, real_ins_ind), expect)); // next free slot
 
 		check(!oah_intd_is_empty(oah));
 		check(2 == oah_intd_entries(oah));
@@ -1757,11 +1757,10 @@ static bool test_oah_intd_insert_lookup_remove_clear_iter(void)
 		check(0 == real_ins_ind);
 		check(oah_intd_insert(oah, &insert, &ins_val) == oah);
 		check(*oah_intd_lookup(oah, &insert) == ins_val);
-		check(arr_mtype_distance(the_tbl,
-			(const map_node *)oah_intd_lookup(oah, &insert)) == real_ins_ind);
+		check(toah_lookup_to_index(&oah->tbl, oah_intd_lookup(oah, &insert)) == real_ins_ind);
 
 		expect.key = insert; expect.val = ins_val_make(insert);
-		check(map_node_is_eq(*arr_mtype_get(ptbl, real_ins_ind), expect)); // next free slot
+		check(map_node_is_eq(map_elem_to_node(ptbl, real_ins_ind), expect)); // next free slot
 
 		check(!oah_intd_is_empty(oah));
 		check(3 == oah_intd_entries(oah));
@@ -1775,11 +1774,10 @@ static bool test_oah_intd_insert_lookup_remove_clear_iter(void)
 		check(1 == real_ins_ind);
 		check(oah_intd_insert(oah, &insert, &ins_val) == oah);
 		check(*oah_intd_lookup(oah, &insert) == ins_val);
-		check(arr_mtype_distance(the_tbl,
-			(const map_node *)oah_intd_lookup(oah, &insert)) == real_ins_ind);
+		check(toah_lookup_to_index(&oah->tbl, oah_intd_lookup(oah, &insert)) == real_ins_ind);
 
 		expect.key = insert; expect.val = ins_val_make(insert);
-		check(map_node_is_eq(*arr_mtype_get(ptbl, real_ins_ind), expect)); // next free slot
+		check(map_node_is_eq(map_elem_to_node(ptbl, real_ins_ind), expect)); // next free slot
 
 		check(!oah_intd_is_empty(oah));
 		check(4 == oah_intd_entries(oah));
@@ -1804,11 +1802,10 @@ static bool test_oah_intd_insert_lookup_remove_clear_iter(void)
 		
 		key = 16;
 		check(*oah_intd_lookup(oah, &key) == ins_val_make(16));
-		check(arr_mtype_distance(the_tbl,
-			(const map_node *)oah_intd_lookup(oah, &key)) == 0);
+		check(toah_lookup_to_index(&oah->tbl, oah_intd_lookup(oah, &key)) == 0);
 
 		expect.key = key; expect.val = ins_val_make(key);
-		check(map_node_is_eq(*arr_mtype_get(ptbl, 0), expect)); // next free slot
+		check(map_node_is_eq(map_elem_to_node(ptbl, 0), expect)); // next free slot
 
 		check(!oah_intd_is_empty(oah));
 		check(4 == oah_intd_entries(oah));
@@ -1853,11 +1850,10 @@ static bool test_oah_intd_insert_lookup_remove_clear_iter(void)
 		check(2 == real_ins_ind);
 		check(oah_intd_insert(oah, &insert, &ins_val) == oah);
 		check(*oah_intd_lookup(oah, &insert) == ins_val);
-		check(arr_mtype_distance(the_tbl,
-			(const map_node *)oah_intd_lookup(oah, &insert)) == real_ins_ind);
+		check(toah_lookup_to_index(&oah->tbl, oah_intd_lookup(oah, &insert)) == real_ins_ind);
 
 		expect.key = insert; expect.val = ins_val_make(insert);
-		check(map_node_is_eq(*arr_mtype_get(ptbl, real_ins_ind), expect));
+		check(map_node_is_eq(map_elem_to_node(ptbl, real_ins_ind), expect));
 
 		check(!oah_intd_is_empty(oah));
 		check(4 == oah_intd_entries(oah));
@@ -1890,11 +1886,10 @@ static bool test_oah_intd_insert_lookup_remove_clear_iter(void)
 		check(0 == real_ins_ind);
 		check(oah_intd_insert(oah, &insert, &ins_val) == oah);
 		check(*oah_intd_lookup(oah, &insert) == ins_val);
-		check(arr_mtype_distance(the_tbl,
-			(const map_node *)oah_intd_lookup(oah, &insert)) == real_ins_ind);
+		check(toah_lookup_to_index(&oah->tbl, oah_intd_lookup(oah, &insert)) == real_ins_ind);
 
 		expect.key = insert; expect.val = ins_val_make(insert);
-		check(map_node_is_eq(*arr_mtype_get(ptbl, real_ins_ind), expect));
+		check(map_node_is_eq(map_elem_to_node(ptbl, real_ins_ind), expect));
 
 		check(!oah_intd_is_empty(oah));
 		check(5 == oah_intd_entries(oah));
@@ -1942,11 +1937,10 @@ static bool test_oah_intd_insert_lookup_remove_clear_iter(void)
 		check(3 == real_ins_ind);
 		check(oah_intd_insert(oah, &insert, &ins_val) == oah);
 		check(*oah_intd_lookup(oah, &insert) == ins_val);
-		check(arr_mtype_distance(the_tbl,
-			(const map_node *)oah_intd_lookup(oah, &insert)) == real_ins_ind);
+		check(toah_lookup_to_index(&oah->tbl, oah_intd_lookup(oah, &insert)) == real_ins_ind);
 
 		expect.key = insert; expect.val = ins_val_make(insert);
-		check(map_node_is_eq(*arr_mtype_get(ptbl, real_ins_ind), expect));
+		check(map_node_is_eq(map_elem_to_node(ptbl, real_ins_ind), expect));
 
 		check(!oah_intd_is_empty(oah));
 		check(5 == oah_intd_entries(oah));
@@ -1975,11 +1969,10 @@ static bool test_oah_intd_insert_lookup_remove_clear_iter(void)
 		check(13 == real_ins_ind);
 		check(oah_intd_insert(oah, &insert, &ins_val) == oah);
 		check(*oah_intd_lookup(oah, &insert) == ins_val);
-		check(arr_mtype_distance(the_tbl,
-			(const map_node *)oah_intd_lookup(oah, &insert)) == real_ins_ind);
+		check(toah_lookup_to_index(&oah->tbl, oah_intd_lookup(oah, &insert)) == real_ins_ind);
 
 		expect.key = insert; expect.val = ins_val_make(insert);
-		check(map_node_is_eq(*arr_mtype_get(ptbl, real_ins_ind), expect));
+		check(map_node_is_eq(map_elem_to_node(ptbl, real_ins_ind), expect));
 
 		check(!oah_intd_is_empty(oah));
 		check(6 == oah_intd_entries(oah));
@@ -1993,11 +1986,10 @@ static bool test_oah_intd_insert_lookup_remove_clear_iter(void)
 		check(1 == real_ins_ind);
 		check(oah_intd_insert(oah, &insert, &ins_val) == oah);
 		check(*oah_intd_lookup(oah, &insert) == ins_val);
-		check(arr_mtype_distance(the_tbl,
-			(const map_node *)oah_intd_lookup(oah, &insert)) == real_ins_ind);
+		check(toah_lookup_to_index(&oah->tbl, oah_intd_lookup(oah, &insert)) == real_ins_ind);
 
 		expect.key = insert; expect.val = ins_val_make(insert);
-		check(map_node_is_eq(*arr_mtype_get(ptbl, real_ins_ind), expect));
+		check(map_node_is_eq(map_elem_to_node(ptbl, real_ins_ind), expect));
 
 		check(!oah_intd_is_empty(oah));
 		check(7 == oah_intd_entries(oah));

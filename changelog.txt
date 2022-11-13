@@ -1,0 +1,2 @@
+2022-11-13
+	* Bugfix: memcpy() overlap in arr_void_swap(); memmove() used instead

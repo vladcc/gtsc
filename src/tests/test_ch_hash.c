@@ -293,7 +293,7 @@ static bool test_chh_void_create(void)
 	return true;
 }
 
-#define ins_val_make(x) ((double)((x)*10+2.43)) // some specific bit pattern
+#define ins_val_make(x) ((double)((x)*10+2.0)) // some specific bit pattern
 
 static bool test_chh_void_insert(void)
 {
@@ -1819,7 +1819,7 @@ static bool test_chh_int_dbl_create(void)
 	return true;
 }
 
-#define ins_val_make(x) ((double)((x)*10+2.43)) // some specific bit pattern
+#define ins_val_make(x) ((double)((x)*10+2.0)) // some specific bit pattern
 
 static bool test_chh_int_dbl_insert(void)
 {

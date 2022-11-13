@@ -396,7 +396,7 @@ TEST_OA_HASH_BIN := $(OBJ_DIR)/test_$(OA_HASH_BASE).bin
 .PHONY: oa_hash_test_compile
 oa_hash_test_compile: $(TEST_OA_HASH_BIN)
 
-TEST_OA_HASH_DEP := $(ARR_ALGO_O) $(BIT_SET_O) $(OA_HASH_O)
+TEST_OA_HASH_DEP := $(BIT_SET_O) $(OA_HASH_O)
 TEST_OA_HASH_DEP += $(TEST_OA_HASH_C)
 $(TEST_OA_HASH_BIN): $(TEST_OA_HASH_DEP)
 	$(CMPL) $^ -o $@ $(CFLAGS)
