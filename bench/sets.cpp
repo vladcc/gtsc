@@ -16,9 +16,7 @@
 
 #define key_type char *
 
-OA_SET_DEFINE(htyp, key_type);
-CH_SET_DEFINE(htyp, key_type);
-PTR_SET_DEFINE(htyp, key_type);
+#include "gtsc_set_types.h"
 
 static inline size_t hash_djb2_str(const char * data)
 {
@@ -171,11 +169,11 @@ class std_set : public container
 		return oset.size();
 	}
 	
-	void iter_init(void)
+	void iter_init(void) override
 	{
 		iter = oset.begin();
 	}
-	const key_type * iter_next()
+	const key_type * iter_next() override
 	{
 		const key_type * pkey = NULL;
 		if (iter != oset.end())
@@ -228,11 +226,11 @@ class std_uset : public container
 		return uset.size();
 	}
 	
-	void iter_init(void)
+	void iter_init(void) override
 	{
 		iter = uset.begin();
 	}
-	const key_type * iter_next()
+	const key_type * iter_next() override
 	{
 		const key_type * pkey = NULL;
 		if (iter != uset.end())
@@ -288,11 +286,11 @@ class oa_set : public container
 		return oas_htyp_entries(&oas);
 	}
 	
-	void iter_init(void)
+	void iter_init(void) override
 	{
 		iter = OAS_ITER_INIT;
 	}
-	const key_type * iter_next()
+	const key_type * iter_next() override
 	{
 		return oas_htyp_iterate(&oas, &iter);
 	}
@@ -342,11 +340,11 @@ class ch_set : public container
 		return chs_htyp_elems(&chs);
 	}
 	
-	void iter_init(void)
+	void iter_init(void) override
 	{
 		chs_iterator_init(&iter);
 	}
-	const key_type * iter_next()
+	const key_type * iter_next() override
 	{
 		return chs_htyp_iterate(&chs, &iter);
 	}
@@ -367,7 +365,7 @@ class ptr_set : public container
 	{
 		ptrs_htyp_destroy(&ptrs);
 	}
-	bool cmp(void * a, void * b)
+	bool cmp(void * a, void * b) override
 	{
 		return (cmp_key_type_ptrs(a, *((const char **)b)) == 0);
 	}
@@ -396,11 +394,11 @@ class ptr_set : public container
 		return ptrs_htyp_elems(&ptrs);
 	}
 	
-	void iter_init(void)
+	void iter_init(void) override
 	{
 		ptrs_iterator_init(&iter);
 	}
-	const key_type * iter_next()
+	const key_type * iter_next() override
 	{
 		return ptrs_htyp_iterate(&ptrs, &iter);
 	}

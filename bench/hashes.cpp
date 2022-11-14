@@ -17,9 +17,7 @@
 #define key_type char *
 #define val_type int
 
-OA_HASH_DEFINE(htyp, key_type, val_type);
-CH_HASH_DEFINE(htyp, key_type, val_type);
-PTR_HASH_DEFINE(htyp, key_type, val_type);
+#include "gtsc_hash_types.h"
 
 static inline size_t hash_djb2_str(const char * data)
 {
@@ -167,11 +165,11 @@ class std_map : public container
 		return omap.size();
 	}
 	
-	void iter_init(void)
+	void iter_init(void) override
 	{
 		iter = omap.begin();
 	}
-	const key_type * iter_next(val_type ** out_val)
+	const key_type * iter_next(val_type ** out_val) override
 	{
 		const key_type * pkey = NULL;
 		if (iter != omap.end())
@@ -221,11 +219,11 @@ class std_umap : public container
 		return umap.size();
 	}
 	
-	void iter_init(void)
+	void iter_init(void) override
 	{
 		iter = umap.begin();
 	}
-	const key_type * iter_next(val_type ** out_val)
+	const key_type * iter_next(val_type ** out_val) override
 	{
 		const key_type * pkey = NULL;
 		if (iter != umap.end())
@@ -279,11 +277,11 @@ class oa_hash : public container
 		return oah_htyp_entries(&oah);
 	}
 	
-	void iter_init(void)
+	void iter_init(void) override
 	{
 		iter = OAH_ITER_INIT;
 	}
-	const key_type * iter_next(val_type ** out_val)
+	const key_type * iter_next(val_type ** out_val) override
 	{
 		return oah_htyp_iterate(&oah, &iter, out_val);
 	}
@@ -329,11 +327,11 @@ class ch_hash : public container
 		return chh_htyp_elems(&chh);
 	}
 	
-	void iter_init(void)
+	void iter_init(void) override
 	{
 		chh_iterator_init(&iter);
 	}
-	const key_type * iter_next(val_type ** out_val)
+	const key_type * iter_next(val_type ** out_val) override
 	{
 		return chh_htyp_iterate(&chh, &iter, out_val);
 	}
@@ -382,11 +380,11 @@ class ptr_hash : public container
 		return ptrh_htyp_elems(&ptrh);
 	}
 	
-	void iter_init(void)
+	void iter_init(void) override
 	{
 		ptrh_iterator_init(&iter);
 	}
-	const key_type * iter_next(val_type ** out_val)
+	const key_type * iter_next(val_type ** out_val) override
 	{
 		static size_t num_, * num = &num_;
 		*out_val = (int *)num;

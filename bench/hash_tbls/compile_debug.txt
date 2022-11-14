@@ -1,1 +1,0 @@
-g++ -I../../src ../../src/oa_hash/oa_hash.c ../../src/bit_set/bit_set.c ../../src/ch_hash/ch_hash.c ../../src/ch_hash/ch_hash_priv.c ../../src/ptr_hash/ptr_hash.c ../../src/ptr_hash/ptr_hash_priv.c hashes.cpp -o hashes.debug.bin -Wall -Wfatal-errors -g -fsanitize=address
