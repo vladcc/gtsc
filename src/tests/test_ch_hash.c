@@ -114,24 +114,33 @@ static size_t chhv_kv_pair_size(chh_void * chhv)
 
 typedef struct tbl_node {
 	int key;
-	char pad[sizeof(double) - sizeof(int)];
 	double val;
 	void * next;
 } tbl_node;
+tbl_node chhv_get_tbl_node_at(chh_void * chhv, size_t ind)
+{
+	tbl_node ret;
+	byte * elem = (byte *)chhv_get_tbl(chhv);
+
+	elem = elem + (ind * chh_priv_pool_elem_size(&chhv->chain_pool));
+	ret.key = *(int *)elem;
+
+	elem += chhv->val_offs;
+	ret.val = *(double *)elem;
+
+	elem += chhv->val_size;
+	ret.next = *(void **)elem;
+
+	return ret;
+}
 static bool chhv_is_tbl_clear(chh_void * chhv)
 {
-	tbl_node * tbl = chhv_get_tbl(chhv);
 	for (size_t i = 0, end = chh_void_cap(chhv); i < end; ++i)
 	{
-		if (chh_priv_not_init_val() != tbl[i].next)
+		if (chh_priv_not_init_val() != chhv_get_tbl_node_at(chhv, i).next)
 			return false;
 	}
 	return true;
-}
-tbl_node chhv_get_tbl_node_at(chh_void * chhv, size_t ind)
-{
-	tbl_node * tbl = chhv_get_tbl(chhv);
-	return tbl[ind];
 }
 
 typedef struct arr_node {
