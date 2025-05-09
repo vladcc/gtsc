@@ -61,13 +61,13 @@ cstr * cstr_push(cstr * str, char ch)
 {
 	size_t len = str->len;
 	size_t cap = str->cap;
-	
+
 	if (len >= cap)
 	{
 		if (!cstr_resize(str, str->cap*2))
 			return NULL;
 	}
-	
+
 	str->data[len] = ch;
 	str->data[++str->len] = '\0';
 	return str;
@@ -78,23 +78,23 @@ cstr * cstr_insert(cstr * dest, size_t index, const char * src, size_t len)
 	size_t cstr_len = dest->len;
 	size_t new_len = cstr_len + len;
 	size_t cap = dest->cap;
-	
+
 	if (new_len > cap)
 	{
 		do {
 			cap *= 2;
 		} while (new_len > cap);
-		
+
 		if (!cstr_resize(dest, cap))
 			return NULL;
 	}
 
 	char * data = dest->data;
 	char * spot = data+index;
-	
+
 	if (index < cstr_len)
 		memmove(spot+len, spot, cstr_len-index);
-	
+
 	memcpy(spot, src, len);
 	data[new_len] = '\0';
 	dest->len = new_len;
@@ -103,25 +103,26 @@ cstr * cstr_insert(cstr * dest, size_t index, const char * src, size_t len)
 
 cstr * cstr_erase(cstr * str, size_t index, size_t len)
 {
-	size_t new_len = str->len - len;
-	char * spot = str->data+index;
+    size_t total_len = str->len;
+    size_t new_len = total_len - len;
+    char * spot = str->data+index;
 
-	memmove(spot, spot+len, new_len);
-	str->data[new_len] = '\0';
-	str->len = new_len;
-	return str;
+    memmove(spot, spot+len, total_len-(index+len));
+    str->data[new_len] = '\0';
+    str->len = new_len;
+    return str;
 }
 
 cstr * cstr_copy_over(cstr * dest, const char * str, size_t len)
 {
 	size_t cap = dest->cap;
-	
+
 	if (cap < len)
 	{
 		do {
 			cap *= 2;
 		} while (cap < len);
-		
+
 		if (!cstr_resize(dest, cap))
 			return NULL;
 	}
